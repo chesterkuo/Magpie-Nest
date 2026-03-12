@@ -16,6 +16,7 @@
     "nanoid": "^5.1.6",
     "ollama": "^0.6.3",
     "pdf-parse": "^2.4.5",
+    "sharp": "^0.34.5",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
