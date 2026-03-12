@@ -9,6 +9,7 @@
     "@lancedb/lancedb": "^0.26.2",
     "@magpie/shared": "workspace:*",
     "better-sqlite3": "^12.6.2",
+    "chokidar": "^5.0.0",
     "hono": "^4",
     "mammoth": "^1.11.0",
     "music-metadata": "^11.12.3",
