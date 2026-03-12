@@ -15,10 +15,12 @@ The Magpie MVP is ~60-65% complete. Core file indexing, vector search, HLS strea
 | STT/TTS hosting | Native macOS processes (whisper.cpp binary + Kokoro Python venv) | Consistent with minimal-Docker architecture; lower RAM than containers |
 | Doc preview | mammoth.js (DOCX→HTML) + PDF.js (PDF), XLSX→HTML, others download | Leverages existing deps, avoids heavy LibreOffice install |
 | Stub pages | Full interactive (search, sort, filter, editable settings) | Complete app feel |
-| Playlists | Persistent in SQLite + `create_playlist` agent tool | PRD F3 requirement |
+| Playlists | Persistent in SQLite + `create_playlist` agent tool | Scope expansion: PRD lists as P2/Phase 3, promoted to MVP for complete audio experience |
 | PWA | App shell + cached conversations in IndexedDB | Installable PWA with offline review of past chats |
 | Wake word | Deferred to Phase 2; push-to-talk for MVP | Browser wake word is unreliable and battery-heavy |
 | Implementation approach | Parallel tracks (backend + frontend) | Fastest to completion; converge at voice integration |
+| Embedding dimensions | 768-dim (current impl, nomic-embed-text default) | PRD says 1024 but current LanceDB schema uses 768; no migration needed since this is the running config |
+| Dark mode | Dark-only for MVP; light mode toggle deferred | Current app is dark-themed globally via Tailwind; PRD's `prefers-color-scheme` support can be a Phase 2 polish item |
 
 ---
 
@@ -89,7 +91,8 @@ CREATE INDEX idx_conversations_updated ON conversations(updated_at DESC);
 | `DELETE` | `/api/playlists/:id` | Delete playlist | Yes |
 | `POST` | `/api/playlists/:id/items` | Add file to playlist | Yes |
 | `DELETE` | `/api/playlists/:id/items/:fileId` | Remove file from playlist | Yes |
-| `GET` | `/api/conversations` | List recent conversations | Yes |
+| `PUT` | `/api/conversations/:id` | Save/update a conversation | Yes |
+| `GET` | `/api/conversations` | List recent conversations (summaries) | Yes |
 | `GET` | `/api/conversations/:id` | Get full conversation | Yes |
 | `GET` | `/api/settings` | Read system status + config | Yes |
 | `PUT` | `/api/settings` | Update mutable settings (watch dirs) | Yes |
@@ -129,15 +132,59 @@ CREATE INDEX idx_conversations_updated ON conversations(updated_at DESC);
 
 Query params: `?sort=modified_at|name|size`, `?order=asc|desc`, `?type=video|audio|pdf|image|doc`, `?days=7|30|90`, `?limit=50&offset=0`
 
+Omitting `type` returns all types. Response:
+```typescript
+{ files: FileItem[]; total: number; limit: number; offset: number }
+```
+
+### Conversations (`/api/conversations`)
+
+- `PUT /api/conversations/:id` — upsert conversation. Request body: `{ messages: Message[] }`. The client generates a conversation ID (nanoid) on first message and sends all messages on each update.
+- `GET /api/conversations` — returns summaries: `{ conversations: Array<{ id, preview: string, messageCount: number, updatedAt: string }> }`. Preview is the first user message text, truncated to 100 chars. Default limit: 50.
+- `GET /api/conversations/:id` — returns `{ id, messages: Message[], createdAt, updatedAt }`
+
+### Settings API Contract
+
+```typescript
+// GET /api/settings — response:
+{
+  watchDirs: string[]              // current watched directories
+  indexing: {
+    queueLength: number            // pending items in index_queue
+    totalIndexed: number           // total files in files table
+    lastIndexedAt: string | null   // most recent indexed_at value
+  }
+  version: string                  // package.json version
+}
+
+// PUT /api/settings — request (all fields optional):
+{
+  watchDirs?: string[]             // replace watched directories list
+}
+// Response: updated settings object (same shape as GET)
+
+// POST /api/index/trigger — request:
+{ path: string }                   // directory path to re-index
+// Response: { queued: number }    // number of files enqueued
+```
+
+Note: Ollama/disk status comes from `GET /api/health` (no auth required). Settings page fetches both `/api/health` and `/api/settings`.
+
 ### New Shared Types
 
 ```typescript
-export interface Playlist {
+// GET /api/playlists returns summaries (no items)
+export interface PlaylistSummary {
   id: string
   name: string
-  items: FileItem[]
+  trackCount: number
   createdAt: string
   updatedAt: string
+}
+
+// GET /api/playlists/:id returns full detail with items
+export interface Playlist extends PlaylistSummary {
+  items: FileItem[]
 }
 
 export interface Conversation {
@@ -147,15 +194,9 @@ export interface Conversation {
   updatedAt: string
 }
 
-// Extend AgentChunk
-export interface AgentChunk {
-  type: 'thinking' | 'text' | 'render' | 'error' | 'audio'
-  content?: string
-  tool?: string
-  items?: FileItem[]
-  message?: string
-  audioUrl?: string  // For TTS playback URL
-}
+// AgentChunk — unchanged from current implementation.
+// TTS is client-driven (not server-pushed), so no new chunk types needed.
+// The client calls POST /api/tts independently after message completion.
 ```
 
 ---
@@ -178,10 +219,20 @@ export interface AgentChunk {
 - **Internal API**: `POST http://localhost:8880/tts` with `{ text, language }` → audio/mpeg
 - **Bun proxies** the response stream back to the client
 
-### Bootstrap
+### Bootstrap & Host Dependencies
 
-- Add `setup-models` script: downloads whisper.cpp binary + base.en model, creates Kokoro venv + installs deps
-- Lazy initialization — processes start on first voice request, not at server boot
+**Prerequisites**: macOS with Apple Silicon, Python 3.11+ (ships with macOS 15), FFmpeg (required by existing HLS service), Xcode CLI tools (for whisper.cpp Metal build).
+
+**`scripts/setup-models.sh`**:
+1. **whisper.cpp**: Clone repo, build with Metal support (`make clean && WHISPER_METAL=1 make -j`), copy `main` binary to `${DATA_DIR}/bin/whisper-cpp`. Download `ggml-base.en.bin` model from huggingface.
+2. **Kokoro**: Create Python venv at `${DATA_DIR}/kokoro-venv/`, install `kokoro-onnx fastapi uvicorn` via pip (~200MB total). Download Kokoro model weights (~330MB).
+3. Script is idempotent — skips already-completed steps.
+
+**Lazy initialization**: Processes start on first voice request, not at server boot. This avoids ~800MB RAM when voice is unused.
+
+**Graceful shutdown**: Server registers `process.on('exit')` and `SIGTERM` handlers to kill child processes. TTS process PID is tracked in `${DATA_DIR}/kokoro.pid`.
+
+**Port conflict**: Kokoro uses port 8880. If unavailable, the service logs a warning and TTS returns 503. A future improvement could use a random port.
 
 ### Client: VoiceInput Component
 
@@ -291,6 +342,8 @@ Replace native `<audio controls>` with custom UI:
 ---
 
 ## 6. Interactive Pages
+
+Currently, only `Chat.tsx` exists in `packages/client/src/routes/`. The Recent, Media, and Settings stubs are inline placeholders in `App.tsx`. All three pages below are **new route files**, and `App.tsx` must be updated to import and render them instead of the inline stubs.
 
 ### Recent Page (`packages/client/src/routes/Recent.tsx`)
 
@@ -439,6 +492,46 @@ No changes needed to `ToolContext` interface — all new tools use existing `db`
 
 ---
 
+## 10. Conventions
+
+### Error Response Format
+
+All new endpoints use a consistent error shape:
+
+```typescript
+// 4xx/5xx responses:
+{ error: string }
+
+// Examples:
+// 404: { error: "File not found" }
+// 400: { error: "Missing required field: name" }
+// 501: { error: "TTS service unavailable" }
+// 503: { error: "Kokoro process not running" }
+```
+
+### `usePlayback` State Management
+
+The playback hook uses **React Context** (not a module singleton or external state lib). A `PlaybackProvider` wraps the app in `App.tsx`, providing state and actions to all consumers via `usePlayback()`. The `<audio>` element is rendered inside the provider, not in any child component.
+
+```tsx
+// App.tsx
+<PlaybackProvider>
+  <Routes ... />
+  <PlaybackBar />
+  <BottomNav />
+</PlaybackProvider>
+```
+
+### Service Worker in Development
+
+The service worker (`sw.js`) is only registered in production builds. In Vite dev mode, SW registration is skipped to avoid caching issues. The `main.tsx` entry checks `import.meta.env.PROD` before calling `navigator.serviceWorker.register()`.
+
+### Untyped Files
+
+Files whose MIME type does not map to the five `FileType` values (`video | audio | pdf | image | doc`) default to `'doc'` type with `file_list` render type. This matches the current behavior in `extractor.ts`.
+
+---
+
 ## File Impact Summary
 
 ### New Files (~25)
@@ -479,7 +572,7 @@ No changes needed to `ToolContext` interface — all new tools use existing `db`
 - `packages/server/agent/prompt.ts` — new tool instructions
 - `packages/server/bootstrap.ts` — voice service init
 - `packages/server/index.ts` — mount new routes
-- `packages/shared/types.ts` — Playlist, Conversation, AgentChunk extensions
+- `packages/shared/types.ts` — PlaylistSummary, Playlist, Conversation types (AgentChunk unchanged)
 - `packages/client/src/App.tsx` — PlaybackBar, route implementations
 - `packages/client/src/components/ChatInput.tsx` — VoiceInput integration
 - `packages/client/src/components/renderers/PDFViewer.tsx` — PDF.js rewrite
