@@ -6,6 +6,9 @@ import { chatRoute } from './routes/chat'
 import { streamRoute } from './routes/stream'
 import { thumbRoute } from './routes/thumb'
 import { fileRoute } from './routes/file'
+import { bootstrap } from './bootstrap'
+
+await bootstrap()
 
 const app = new Hono()
 
