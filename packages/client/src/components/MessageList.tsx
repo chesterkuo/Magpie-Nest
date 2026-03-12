@@ -1,12 +1,6 @@
 import type { Message } from '../hooks/useSSE'
 import { ThinkingIndicator } from './ThinkingIndicator'
-
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
-}
+import { RenderBlock } from './renderers/RenderBlock'
 
 export function MessageList({ messages }: { messages: Message[] }) {
   return (
@@ -21,21 +15,7 @@ export function MessageList({ messages }: { messages: Message[] }) {
           ) : (
             <div className="space-y-2">
               {msg.thinking && <ThinkingIndicator tool={msg.thinking} />}
-              {msg.items && msg.items.length > 0 && (
-                <div className="space-y-2">
-                  {msg.items.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center gap-3 bg-gray-800 rounded-lg p-3"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{item.name}</p>
-                        <p className="text-xs text-gray-400">{item.type} &middot; {formatSize(item.size)}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              {msg.items && msg.items.length > 0 && <RenderBlock items={msg.items} />}
               {msg.text && <p className="text-sm text-gray-200 whitespace-pre-wrap">{msg.text}</p>}
             </div>
           )}
