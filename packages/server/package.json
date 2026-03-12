@@ -10,8 +10,12 @@
     "@magpie/shared": "workspace:*",
     "better-sqlite3": "^12.6.2",
     "hono": "^4",
+    "mammoth": "^1.11.0",
+    "music-metadata": "^11.12.3",
     "nanoid": "^5.1.6",
-    "ollama": "^0.6.3"
+    "ollama": "^0.6.3",
+    "pdf-parse": "^2.4.5",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13"
