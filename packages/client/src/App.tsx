@@ -1,8 +1,5 @@
 import { Routes, Route, NavLink } from 'react-router'
-
-function Chat() {
-  return <div className="p-4">Chat (coming next)</div>
-}
+import { Chat } from './routes/Chat'
 function Recent() {
   return <div className="p-4">Recent files</div>
 }
