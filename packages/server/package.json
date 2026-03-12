@@ -6,10 +6,12 @@
     "dev": "bun run --hot index.ts"
   },
   "dependencies": {
+    "@lancedb/lancedb": "^0.26.2",
     "@magpie/shared": "workspace:*",
     "better-sqlite3": "^12.6.2",
     "hono": "^4",
-    "nanoid": "^5.1.6"
+    "nanoid": "^5.1.6",
+    "ollama": "^0.6.3"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13"
