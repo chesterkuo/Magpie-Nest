@@ -1,0 +1,12 @@
+{
+  "name": "@magpie/server",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "bun run --hot index.ts"
+  },
+  "dependencies": {
+    "@magpie/shared": "workspace:*",
+    "hono": "^4"
+  }
+}
