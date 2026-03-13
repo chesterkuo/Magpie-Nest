@@ -5,10 +5,10 @@ import { healthRoute } from './routes/health'
 import { chatRoute } from './routes/chat'
 import { streamRoute } from './routes/stream'
 import { thumbRoute } from './routes/thumb'
-import { fileRoute } from './routes/file'
+import { createFileRoute } from './routes/file'
 import { bootstrap } from './bootstrap'
 
-await bootstrap()
+const appContext = await bootstrap()
 
 const app = new Hono()
 
@@ -20,7 +20,7 @@ api.route('/', healthRoute)
 api.route('/', chatRoute)
 api.route('/', streamRoute)
 api.route('/', thumbRoute)
-api.route('/', fileRoute)
+api.route('/', createFileRoute(appContext.db))
 
 // Serve React PWA static files (after build)
 app.get('*', async (c) => {
