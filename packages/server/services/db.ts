@@ -27,6 +27,11 @@ export interface MagpieDb {
   getFileById(id: string): FileRecord | null
   getFileByPath(path: string): FileRecord | null
   listRecent(opts: { limit?: number; file_type?: string; days?: number }): FileRecord[]
+  listFiles(opts: {
+    limit: number; offset: number;
+    sort?: 'modified_at' | 'name' | 'size'; order?: 'asc' | 'desc';
+    file_type?: string; days?: number;
+  }): { files: FileRecord[]; total: number }
   deleteFileByPath(path: string): void
   enqueue(filePath: string, eventType: string): void
   dequeuePending(batchSize: number): QueueItem[]
@@ -183,6 +188,24 @@ export function createDb(dbPath: string): MagpieDb {
       params.push(limit)
 
       return db.prepare(sql).all(...params) as FileRecord[]
+    },
+
+    listFiles({ limit, offset, sort = 'modified_at', order = 'desc', file_type, days }) {
+      const allowedSort = ['modified_at', 'name', 'size']
+      const allowedOrder = ['asc', 'desc']
+      const sortCol = allowedSort.includes(sort) ? sort : 'modified_at'
+      const sortOrder = allowedOrder.includes(order!) ? order : 'desc'
+
+      const conditions: string[] = []
+      const params: unknown[] = []
+
+      if (file_type) { conditions.push('file_type = ?'); params.push(file_type) }
+      if (days) { conditions.push("modified_at >= datetime('now', ?)"); params.push(`-${days} days`) }
+
+      const where = conditions.length ? ' WHERE ' + conditions.join(' AND ') : ''
+      const countRow = db.prepare(`SELECT COUNT(*) as count FROM files${where}`).get(...params) as { count: number }
+      const files = db.prepare(`SELECT * FROM files${where} ORDER BY ${sortCol} ${sortOrder} LIMIT ? OFFSET ?`).all(...params, limit, offset) as FileRecord[]
+      return { files, total: countRow.count }
     },
 
     deleteFileByPath(path: string) {

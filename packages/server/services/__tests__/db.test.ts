@@ -157,4 +157,35 @@ describe('MagpieDb', () => {
       expect(c3!.messageCount).toBe(2)
     })
   })
+
+  describe('listFiles', () => {
+    beforeEach(() => {
+      db.upsertFile({ id: 'lf-1', path: '/tmp/a.mp4', name: 'a.mp4', mime_type: 'video/mp4', size: 1000, modified_at: '2026-03-10T00:00:00Z', file_type: 'video', meta: '{}', hash: 'x1' })
+      db.upsertFile({ id: 'lf-2', path: '/tmp/b.pdf', name: 'b.pdf', mime_type: 'application/pdf', size: 500, modified_at: '2026-03-12T00:00:00Z', file_type: 'pdf', meta: '{}', hash: 'x2' })
+    })
+
+    it('returns paginated results with total', () => {
+      const result = db.listFiles({ limit: 10, offset: 0 })
+      expect(result.files.length).toBe(2)
+      expect(result.total).toBe(2)
+    })
+
+    it('filters by file_type', () => {
+      const result = db.listFiles({ limit: 10, offset: 0, file_type: 'video' })
+      expect(result.files.length).toBe(1)
+      expect(result.files[0].name).toBe('a.mp4')
+    })
+
+    it('sorts by name ascending', () => {
+      const result = db.listFiles({ limit: 10, offset: 0, sort: 'name', order: 'asc' })
+      expect(result.files[0].name).toBe('a.mp4')
+    })
+
+    it('respects offset for pagination', () => {
+      const result = db.listFiles({ limit: 1, offset: 1, sort: 'name', order: 'asc' })
+      expect(result.files.length).toBe(1)
+      expect(result.files[0].name).toBe('b.pdf')
+      expect(result.total).toBe(2)
+    })
+  })
 })
