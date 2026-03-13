@@ -30,14 +30,11 @@ api.route('/', createPlaylistsRoute(appContext.db))
 api.route('/', createConversationsRoute(appContext.db))
 api.route('/', createSettingsRoute(appContext.db, appContext.getWatchDirs, appContext.setWatchDirs))
 
-// Serve React PWA static files (after build)
+// Serve React PWA static files
 app.get('*', async (c) => {
   const path = c.req.path === '/' ? '/index.html' : c.req.path
   const file = Bun.file(`./packages/client/dist${path}`)
-  if (await file.exists()) {
-    return new Response(file)
-  }
-  // SPA fallback
+  if (await file.exists()) return new Response(file)
   return new Response(Bun.file('./packages/client/dist/index.html'))
 })
 
