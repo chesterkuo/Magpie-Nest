@@ -13,6 +13,8 @@ const WATCH_DIRS = (process.env.WATCH_DIRS || '').split(',').filter(Boolean)
 export interface AppContext {
   db: MagpieDb
   vectorDb: VectorDb
+  getWatchDirs: () => string[]
+  setWatchDirs: (dirs: string[]) => void
 }
 
 export async function bootstrap(): Promise<AppContext> {
@@ -21,6 +23,8 @@ export async function bootstrap(): Promise<AppContext> {
     const path = `${DATA_DIR}/${dir}`
     if (!existsSync(path)) mkdirSync(path, { recursive: true })
   }
+
+  let currentWatchDirs = [...WATCH_DIRS]
 
   const db = createDb(SQLITE_PATH)
   const vectorDb = await createVectorDb(LANCEDB_PATH)
@@ -47,5 +51,10 @@ export async function bootstrap(): Promise<AppContext> {
   }
 
   console.log('[magpie] Server bootstrapped')
-  return { db, vectorDb }
+  return {
+    db,
+    vectorDb,
+    getWatchDirs: () => currentWatchDirs,
+    setWatchDirs: (dirs: string[]) => { currentWatchDirs = dirs },
+  }
 }
