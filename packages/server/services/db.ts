@@ -39,6 +39,10 @@ export interface MagpieDb {
   addToPlaylist(playlistId: string, fileId: string, position: number): void
   removeFromPlaylist(playlistId: string, fileId: string): void
   getPlaylistItems(playlistId: string): FileRecord[]
+  // Conversations
+  saveConversation(id: string, messagesJson: string): void
+  getConversation(id: string): { id: string; messages: string; created_at: string; updated_at: string } | null
+  listConversations(limit: number): Array<{ id: string; preview: string; messageCount: number; updatedAt: string }>
   close(): void
 }
 
@@ -90,6 +94,14 @@ export function createDb(dbPath: string): MagpieDb {
       added_at    TEXT DEFAULT (datetime('now'))
     );
     CREATE INDEX IF NOT EXISTS idx_playlist_items_playlist ON playlist_items(playlist_id, position);
+
+    CREATE TABLE IF NOT EXISTS conversations (
+      id          TEXT PRIMARY KEY,
+      messages    TEXT NOT NULL,
+      created_at  TEXT DEFAULT (datetime('now')),
+      updated_at  TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_conversations_updated ON conversations(updated_at DESC);
   `)
 
   const stmts = {
@@ -120,6 +132,10 @@ export function createDb(dbPath: string): MagpieDb {
     removeFromPlaylist: db.prepare('DELETE FROM playlist_items WHERE playlist_id = ? AND file_id = ?'),
     getPlaylistItems: db.prepare(`SELECT f.* FROM files f JOIN playlist_items pi ON f.id = pi.file_id WHERE pi.playlist_id = ? ORDER BY pi.position`),
     playlistItemCount: db.prepare('SELECT COUNT(*) as count FROM playlist_items WHERE playlist_id = ?'),
+    // Conversation statements
+    saveConversation: db.prepare(`INSERT INTO conversations (id, messages) VALUES (?, ?) ON CONFLICT(id) DO UPDATE SET messages = excluded.messages, updated_at = datetime('now')`),
+    getConversation: db.prepare('SELECT * FROM conversations WHERE id = ?'),
+    listConversations: db.prepare('SELECT id, messages, created_at, updated_at FROM conversations ORDER BY updated_at DESC LIMIT ?'),
   }
 
   return {
@@ -220,6 +236,33 @@ export function createDb(dbPath: string): MagpieDb {
 
     getPlaylistItems(playlistId: string) {
       return stmts.getPlaylistItems.all(playlistId) as FileRecord[]
+    },
+
+    // Conversation methods
+    saveConversation(id: string, messagesJson: string) {
+      stmts.saveConversation.run(id, messagesJson)
+    },
+
+    getConversation(id: string) {
+      return (stmts.getConversation.get(id) as { id: string; messages: string; created_at: string; updated_at: string }) ?? null
+    },
+
+    listConversations(limit: number) {
+      const rows = stmts.listConversations.all(limit) as Array<{ id: string; messages: string; created_at: string; updated_at: string }>
+      return rows.map(row => {
+        let preview = ''
+        let messageCount = 0
+        try {
+          const messages = JSON.parse(row.messages) as Array<{ role: string; text?: string; content?: string }>
+          messageCount = messages.length
+          const firstUser = messages.find(m => m.role === 'user')
+          if (firstUser) {
+            const text = firstUser.text ?? firstUser.content ?? ''
+            preview = text.slice(0, 100)
+          }
+        } catch {}
+        return { id: row.id, preview, messageCount, updatedAt: row.updated_at }
+      })
     },
 
     close() {

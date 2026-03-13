@@ -128,4 +128,33 @@ describe('MagpieDb', () => {
       expect(db.listPlaylists().filter(p => p.id === 'pl-4').length).toBe(0)
     })
   })
+
+  describe('conversations', () => {
+    it('saves and retrieves a conversation', () => {
+      const msgs = JSON.stringify([{ role: 'user', text: 'hello' }])
+      db.saveConversation('c-1', msgs)
+      const conv = db.getConversation('c-1')
+      expect(conv).not.toBeNull()
+      expect(conv!.messages).toBe(msgs)
+    })
+
+    it('upserts on duplicate id', () => {
+      db.saveConversation('c-2', JSON.stringify([{ role: 'user', text: 'v1' }]))
+      db.saveConversation('c-2', JSON.stringify([{ role: 'user', text: 'v2' }]))
+      const conv = db.getConversation('c-2')
+      expect(conv!.messages).toContain('v2')
+    })
+
+    it('lists conversations with preview', () => {
+      db.saveConversation('c-3', JSON.stringify([
+        { role: 'user', text: 'Find my photos from last week' },
+        { role: 'assistant', text: 'Here are your photos' },
+      ]))
+      const list = db.listConversations(10)
+      expect(list.length).toBeGreaterThanOrEqual(1)
+      const c3 = list.find(c => c.id === 'c-3')
+      expect(c3).toBeDefined()
+      expect(c3!.messageCount).toBe(2)
+    })
+  })
 })
