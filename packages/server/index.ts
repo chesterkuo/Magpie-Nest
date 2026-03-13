@@ -7,6 +7,7 @@ import { streamRoute } from './routes/stream'
 import { thumbRoute } from './routes/thumb'
 import { createFileRoute } from './routes/file'
 import { createFilesRoute } from './routes/files'
+import { createPlaylistsRoute } from './routes/playlists'
 import { bootstrap } from './bootstrap'
 
 const appContext = await bootstrap()
@@ -23,6 +24,7 @@ api.route('/', streamRoute)
 api.route('/', thumbRoute)
 api.route('/', createFileRoute(appContext.db))
 api.route('/', createFilesRoute(appContext.db))
+api.route('/', createPlaylistsRoute(appContext.db))
 
 // Serve React PWA static files (after build)
 app.get('*', async (c) => {
