@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import type { AgentChunk, FileItem, Message } from '@magpie/shared'
 
 export type { Message }
@@ -6,6 +6,7 @@ export type { Message }
 export function useSSE() {
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const lastAssistantTextRef = useRef('')
 
   const sendMessage = useCallback(async (text: string) => {
     setMessages((prev) => [...prev, { role: 'user', text }])
@@ -56,6 +57,7 @@ export function useSSE() {
                 case 'text':
                   last.text += chunk.content || ''
                   last.thinking = undefined
+                  lastAssistantTextRef.current = last.text
                   break
                 case 'render':
                   last.items = [...(last.items || []), ...(chunk.items || [])]
@@ -85,6 +87,30 @@ export function useSSE() {
       setIsLoading(false)
     }
   }, [])
+
+  useEffect(() => {
+    if (isLoading || !lastAssistantTextRef.current) return
+    if (localStorage.getItem('magpie-tts') !== 'true') return
+
+    const text = lastAssistantTextRef.current
+    lastAssistantTextRef.current = ''
+    const token = localStorage.getItem('magpie-token') || 'magpie-dev'
+    fetch('/api/tts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ text }),
+    })
+      .then(r => r.ok ? r.blob() : null)
+      .then(blob => {
+        if (blob) {
+          const url = URL.createObjectURL(blob)
+          const audio = new Audio(url)
+          audio.play().catch(() => {})
+          audio.onended = () => URL.revokeObjectURL(url)
+        }
+      })
+      .catch(() => {})
+  }, [isLoading])
 
   return { messages, isLoading, sendMessage }
 }
