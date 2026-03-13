@@ -5,11 +5,20 @@ import { Media } from './routes/Media'
 import { Settings } from './routes/Settings'
 import { PlaybackProvider } from './hooks/usePlayback'
 import { PlaybackBar } from './components/PlaybackBar'
+import { useOnlineStatus } from './hooks/useOnlineStatus'
 
 export function App() {
+  const online = useOnlineStatus()
+
   return (
     <PlaybackProvider>
       <div className="flex flex-col h-dvh">
+        {!online && (
+          <div className="bg-yellow-900/50 text-yellow-200 text-xs text-center py-1">
+            You're offline — viewing cached data
+          </div>
+        )}
+
         <main className="flex-1 overflow-y-auto">
           <Routes>
             <Route path="/" element={<Chat />} />
