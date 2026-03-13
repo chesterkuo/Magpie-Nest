@@ -10,6 +10,7 @@ import { createFilesRoute } from './routes/files'
 import { createPlaylistsRoute } from './routes/playlists'
 import { createConversationsRoute } from './routes/conversations'
 import { createSettingsRoute } from './routes/settings'
+import { sttRoute } from './routes/stt'
 import { bootstrap } from './bootstrap'
 
 const appContext = await bootstrap()
@@ -29,6 +30,7 @@ api.route('/', createFilesRoute(appContext.db))
 api.route('/', createPlaylistsRoute(appContext.db))
 api.route('/', createConversationsRoute(appContext.db))
 api.route('/', createSettingsRoute(appContext.db, appContext.getWatchDirs, appContext.setWatchDirs))
+api.route('/', sttRoute)
 
 // Serve React PWA static files
 app.get('*', async (c) => {
