@@ -32,6 +32,13 @@ export interface MagpieDb {
   dequeuePending(batchSize: number): QueueItem[]
   markQueueDone(id: number): void
   markQueueError(id: number): void
+  // Playlists
+  createPlaylist(id: string, name: string): void
+  deletePlaylist(id: string): void
+  listPlaylists(): Array<{ id: string; name: string; trackCount: number; created_at: string; updated_at: string }>
+  addToPlaylist(playlistId: string, fileId: string, position: number): void
+  removeFromPlaylist(playlistId: string, fileId: string): void
+  getPlaylistItems(playlistId: string): FileRecord[]
   close(): void
 }
 
@@ -67,6 +74,22 @@ export function createDb(dbPath: string): MagpieDb {
     );
 
     CREATE INDEX IF NOT EXISTS idx_queue_status ON index_queue(status);
+
+    CREATE TABLE IF NOT EXISTS playlists (
+      id          TEXT PRIMARY KEY,
+      name        TEXT NOT NULL,
+      created_at  TEXT DEFAULT (datetime('now')),
+      updated_at  TEXT DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS playlist_items (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      playlist_id TEXT NOT NULL REFERENCES playlists(id) ON DELETE CASCADE,
+      file_id     TEXT NOT NULL REFERENCES files(id) ON DELETE CASCADE,
+      position    INTEGER NOT NULL,
+      added_at    TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_playlist_items_playlist ON playlist_items(playlist_id, position);
   `)
 
   const stmts = {
@@ -89,6 +112,14 @@ export function createDb(dbPath: string): MagpieDb {
     markStatus: db.prepare(
       'UPDATE index_queue SET status = ? WHERE id = ?'
     ),
+    // Playlist statements
+    createPlaylist: db.prepare('INSERT INTO playlists (id, name) VALUES (?, ?)'),
+    deletePlaylist: db.prepare('DELETE FROM playlists WHERE id = ?'),
+    listPlaylists: db.prepare('SELECT id, name, created_at, updated_at FROM playlists ORDER BY updated_at DESC'),
+    addToPlaylist: db.prepare('INSERT INTO playlist_items (playlist_id, file_id, position) VALUES (?, ?, ?)'),
+    removeFromPlaylist: db.prepare('DELETE FROM playlist_items WHERE playlist_id = ? AND file_id = ?'),
+    getPlaylistItems: db.prepare(`SELECT f.* FROM files f JOIN playlist_items pi ON f.id = pi.file_id WHERE pi.playlist_id = ? ORDER BY pi.position`),
+    playlistItemCount: db.prepare('SELECT COUNT(*) as count FROM playlist_items WHERE playlist_id = ?'),
   }
 
   return {
@@ -160,6 +191,35 @@ export function createDb(dbPath: string): MagpieDb {
 
     markQueueError(id: number) {
       stmts.markStatus.run('error', id)
+    },
+
+    // Playlist methods
+    createPlaylist(id: string, name: string) {
+      stmts.createPlaylist.run(id, name)
+    },
+
+    deletePlaylist(id: string) {
+      stmts.deletePlaylist.run(id)
+    },
+
+    listPlaylists() {
+      const rows = stmts.listPlaylists.all() as Array<{ id: string; name: string; created_at: string; updated_at: string }>
+      return rows.map(row => {
+        const countRow = stmts.playlistItemCount.get(row.id) as { count: number }
+        return { ...row, trackCount: countRow.count }
+      })
+    },
+
+    addToPlaylist(playlistId: string, fileId: string, position: number) {
+      stmts.addToPlaylist.run(playlistId, fileId, position)
+    },
+
+    removeFromPlaylist(playlistId: string, fileId: string) {
+      stmts.removeFromPlaylist.run(playlistId, fileId)
+    },
+
+    getPlaylistItems(playlistId: string) {
+      return stmts.getPlaylistItems.all(playlistId) as FileRecord[]
     },
 
     close() {
