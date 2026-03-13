@@ -24,6 +24,7 @@ export interface VectorDb {
   addChunks(chunks: ChunkRecord[]): Promise<void>
   search(queryVector: number[], limit: number): Promise<SearchResult[]>
   deleteByFileId(fileId: string): Promise<void>
+  count(): Promise<number>
 }
 
 export async function createVectorDb(dbPath: string): Promise<VectorDb> {
@@ -72,6 +73,13 @@ export async function createVectorDb(dbPath: string): Promise<VectorDb> {
       const table = await getOrCreateTable()
       if (!table) return
       await table.delete(`file_id = '${fileId}'`)
+    },
+
+    async count(): Promise<number> {
+      try {
+        const table = await db.openTable('file_chunks')
+        return await table.countRows()
+      } catch { return 0 }
     },
   }
 }

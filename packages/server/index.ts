@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { authMiddleware } from './middleware/auth'
-import { healthRoute } from './routes/health'
+import { createHealthRoute } from './routes/health'
 import { chatRoute } from './routes/chat'
 import { streamRoute } from './routes/stream'
 import { thumbRoute } from './routes/thumb'
@@ -20,7 +20,7 @@ app.use('*', cors())
 app.use('/api/*', authMiddleware())
 
 const api = app.basePath('/api')
-api.route('/', healthRoute)
+api.route('/', createHealthRoute(appContext.db, appContext.vectorDb))
 api.route('/', chatRoute)
 api.route('/', streamRoute)
 api.route('/', thumbRoute)
