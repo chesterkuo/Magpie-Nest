@@ -1,5 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
+import { nanoid } from 'nanoid'
 import type { AgentChunk, FileItem, Message } from '@magpie/shared'
+import { saveConversation } from '../lib/conversationStore'
 
 export type { Message }
 
@@ -7,6 +9,8 @@ export function useSSE() {
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const lastAssistantTextRef = useRef('')
+  const [conversationId] = useState(() => nanoid())
+  const messagesRef = useRef<Message[]>([])
 
   const sendMessage = useCallback(async (text: string) => {
     setMessages((prev) => [...prev, { role: 'user', text }])
@@ -69,6 +73,7 @@ export function useSSE() {
               }
 
               msgs[msgs.length - 1] = last
+              messagesRef.current = msgs
               return msgs
             })
           } catch {}
@@ -88,6 +93,7 @@ export function useSSE() {
     }
   }, [])
 
+  // TTS auto-playback
   useEffect(() => {
     if (isLoading || !lastAssistantTextRef.current) return
     if (localStorage.getItem('magpie-tts') !== 'true') return
@@ -110,6 +116,19 @@ export function useSSE() {
         }
       })
       .catch(() => {})
+  }, [isLoading])
+
+  // Conversation persistence
+  useEffect(() => {
+    if (isLoading || messagesRef.current.length === 0) return
+    const msgs = messagesRef.current
+    const token = localStorage.getItem('magpie-token') || 'magpie-dev'
+    saveConversation(conversationId, msgs)
+    fetch(`/api/conversations/${conversationId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ messages: msgs }),
+    }).catch(() => {})
   }, [isLoading])
 
   return { messages, isLoading, sendMessage }
