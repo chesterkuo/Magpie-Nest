@@ -25,3 +25,36 @@ export interface AgentChunk {
   items?: FileItem[]
   message?: string
 }
+
+export interface PlaylistSummary {
+  id: string
+  name: string
+  trackCount: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface Playlist extends PlaylistSummary {
+  items: FileItem[]
+}
+
+export interface Message {
+  role: 'user' | 'assistant'
+  text: string
+  items?: FileItem[]
+  thinking?: string
+}
+
+export interface ConversationSummary {
+  id: string
+  preview: string
+  messageCount: number
+  updatedAt: string
+}
+
+export interface Conversation {
+  id: string
+  messages: Message[]
+  createdAt: string
+  updatedAt: string
+}

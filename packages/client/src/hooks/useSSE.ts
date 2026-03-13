@@ -1,12 +1,5 @@
 import { useState, useCallback } from 'react'
-import type { AgentChunk, FileItem } from '@magpie/shared'
-
-interface Message {
-  role: 'user' | 'assistant'
-  text: string
-  items?: FileItem[]
-  thinking?: string
-}
+import type { AgentChunk, FileItem, Message } from '@magpie/shared'
 
 export type { Message }
 
