@@ -120,8 +120,8 @@ const toolImplementations: Record<string, (args: any) => Promise<any>> = {
   },
 
   async list_directory(args: { path: string; sort_by?: string; file_type?: string }) {
-    const allowedSort = ['name', 'modified_at', 'size']
-    const sort = allowedSort.includes(args.sort_by || '') ? args.sort_by! : 'modified_at'
+    const sortMap: Record<string, string> = { name: 'name', modified_at: 'modified_at', modified: 'modified_at', size: 'size' }
+    const sort = sortMap[args.sort_by || ''] || 'modified_at'
     const conditions: string[] = ['path LIKE ?']
     const params: unknown[] = [`${args.path}%`]
     if (args.file_type) {

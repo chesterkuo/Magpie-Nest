@@ -72,7 +72,8 @@ export async function createVectorDb(dbPath: string): Promise<VectorDb> {
     async deleteByFileId(fileId: string) {
       const table = await getOrCreateTable()
       if (!table) return
-      await table.delete(`file_id = '${fileId}'`)
+      const safeId = fileId.replace(/'/g, "''")
+      await table.delete(`file_id = '${safeId}'`)
     },
 
     async count(): Promise<number> {

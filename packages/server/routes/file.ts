@@ -16,6 +16,7 @@ export function createFileRoute(db: MagpieDb) {
     const file = Bun.file(record.path)
     const fileSize = file.size
     const range = c.req.header('Range')
+    const safeName = record.name.replace(/["\r\n\\]/g, '_')
 
     if (range) {
       const match = range.match(/bytes=(\d+)-(\d*)/)
@@ -30,7 +31,7 @@ export function createFileRoute(db: MagpieDb) {
             'Content-Range': `bytes ${start}-${end}/${fileSize}`,
             'Content-Length': String(end - start + 1),
             'Accept-Ranges': 'bytes',
-            'Content-Disposition': `inline; filename="${record.name}"`,
+            'Content-Disposition': `inline; filename="${safeName}"`,
           },
         })
       }
@@ -41,7 +42,7 @@ export function createFileRoute(db: MagpieDb) {
         'Content-Type': record.mime_type,
         'Content-Length': String(fileSize),
         'Accept-Ranges': 'bytes',
-        'Content-Disposition': `inline; filename="${record.name}"`,
+        'Content-Disposition': `inline; filename="${safeName}"`,
       },
     })
   })
