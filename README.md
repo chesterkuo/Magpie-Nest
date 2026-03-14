@@ -12,12 +12,15 @@ Magpie is a self-hosted AI storage agent that runs entirely on your Mac Mini. Th
 
 ## Features
 
-- **Natural Language Search** — Ask "find the presentation I worked on last week" and get results
-- **Media Playback** — Built-in video streaming (HLS) and audio player with queue, shuffle, and loop
-- **Document Preview** — View PDFs, DOCX, and XLSX files directly in the browser
-- **Smart Indexing** — Automatic file watching with semantic vector search
+- **Natural Language Search** — Ask "find the presentation I worked on last week" and get results via hybrid search (vector + keyword re-ranking)
+- **Media Playback** — Built-in video streaming (HLS) with duration overlay, audio player with artist/album display, queue, shuffle, and loop
+- **Document Preview** — View PDFs (with fullscreen mode), DOCX, XLSX, and PPTX directly in the browser
+- **Smart Indexing** — Automatic file watching (30s debounce) with semantic vector search and date-prefixed chunks
+- **File Organization** — AI-powered tools to organize files by type/date and batch rename with regex
 - **Voice Interface** — Push-to-talk speech input (whisper.cpp) and text-to-speech responses (Kokoro)
+- **Conversation History** — Multi-turn chat with persistent conversation history
 - **Playlist Management** — Create and manage audio playlists via chat or UI
+- **Rich Metadata** — Extracts duration, artist, album, dimensions from media files
 - **PWA** — Install as a standalone app with offline support
 - **Privacy First** — Everything runs locally on your hardware
 
@@ -100,16 +103,17 @@ magpie/
 │   ├── server/           # Bun + Hono API server
 │   │   ├── agent/        # ReAct loop, tools, system prompt
 │   │   ├── routes/       # REST API endpoints
-│   │   ├── services/     # DB, LanceDB, embeddings, indexer, HLS, STT, TTS
+│   │   ├── services/     # DB, LanceDB, embeddings, indexer, search, HLS, STT, TTS
 │   │   ├── middleware/   # Auth
 │   │   └── workers/      # Background indexer worker
 │   ├── client/           # React 19 PWA
-│   │   ├── src/routes/   # Chat, Recent, Media, Settings pages
+│   │   ├── src/routes/   # Chat, ConversationList, Recent, Media, Settings
 │   │   ├── src/hooks/    # useSSE, usePlayback, useOnlineStatus
 │   │   └── src/components/ # UI components + renderers
 │   └── shared/           # Shared TypeScript types
+├── e2e/                  # Playwright end-to-end tests
 ├── docker/               # Docker Compose (Ollama)
-├── scripts/              # Setup scripts (voice models)
+├── scripts/              # Setup scripts (voice models, icon generation)
 └── data/                 # Runtime data (SQLite, LanceDB, thumbs, HLS cache)
 ```
 
@@ -134,22 +138,30 @@ magpie/
 
 The AI agent has access to these tools via function calling:
 
-- `search_files` — Semantic vector search across all indexed files
+- `search_files` — Hybrid search (vector + keyword) across all indexed files with type/date filters
 - `play_media` — Stream video or audio files
-- `open_document` — Preview documents (PDF, DOCX, XLSX)
+- `open_document` — Preview documents (PDF, DOCX, XLSX, PPTX)
 - `list_recent` — Browse recently modified files
 - `get_file_info` — Get file metadata and details
 - `create_playlist` — Create playlists with optional auto-fill from search
 - `list_directory` — Browse files in a specific folder
 - `get_disk_status` — Check disk usage and file statistics
+- `organize_files` — Organize files into subfolders by type or date
+- `batch_rename` — Rename files matching a regex pattern (supports dry-run preview)
 
 ## Testing
 
 ```bash
+# API & unit tests (165 tests)
 cd packages/server
-bun test              # Run all 127 tests
+bun test
 bun test --watch      # Watch mode
+
+# E2E browser tests (38 tests, Playwright + Chromium)
+bunx playwright test
 ```
+
+> First-time setup: `bun add -d @playwright/test && bunx playwright install chromium && sudo bunx playwright install-deps chromium`
 
 ## Environment Variables
 
