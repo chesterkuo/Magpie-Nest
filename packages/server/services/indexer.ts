@@ -3,6 +3,7 @@ import { type VectorDb } from './lancedb'
 import { embed } from './embeddings'
 import { extractText, chunkText, detectFileType } from './extractor'
 import { generateThumb } from './thumbnail'
+import { extractMetadata } from './metadata'
 import { nanoid } from 'nanoid'
 import { statSync } from 'fs'
 import { basename } from 'path'
@@ -34,6 +35,12 @@ export async function processFile(
   // Extract text
   const text = await extractText(filePath, mime, fileType)
 
+  // Extract structured metadata
+  let meta: Record<string, any> = {}
+  try {
+    meta = await extractMetadata(filePath, fileType)
+  } catch {}
+
   // Upsert file record
   db.upsertFile({
     id: fileId,
@@ -43,7 +50,7 @@ export async function processFile(
     size: stat.size,
     modified_at: stat.mtime.toISOString(),
     file_type: fileType,
-    meta: '{}',
+    meta: JSON.stringify(meta),
     hash,
   })
 
