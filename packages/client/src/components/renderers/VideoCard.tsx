@@ -2,6 +2,14 @@ import { useRef, useState } from 'react'
 import Hls from 'hls.js'
 import type { FileItem } from '@magpie/shared'
 
+function formatDuration(seconds: number): string {
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  const s = Math.floor(seconds % 60)
+  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+  return `${m}:${String(s).padStart(2, '0')}`
+}
+
 export function VideoCard({ item }: { item: FileItem }) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [playing, setPlaying] = useState(false)
@@ -25,7 +33,14 @@ export function VideoCard({ item }: { item: FileItem }) {
     <div className="bg-gray-800 rounded-lg overflow-hidden">
       {!playing ? (
         <button onClick={handlePlay} className="w-full text-left p-3 flex items-center gap-3">
-          <img src={item.thumbUrl} alt="" className="w-24 h-16 object-cover rounded" />
+          <div className="relative">
+            <img src={item.thumbUrl} alt="" className="w-24 h-16 object-cover rounded" />
+            {item.duration != null && (
+              <span className="absolute bottom-0.5 right-0.5 bg-black/80 text-[10px] px-1 rounded">
+                {formatDuration(item.duration)}
+              </span>
+            )}
+          </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate">{item.name}</p>
           </div>

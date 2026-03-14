@@ -63,7 +63,8 @@ export async function processFile(
 
   // Chunk and embed text content
   if (text.trim()) {
-    const metadata = `File: ${name} | Type: ${fileType} | Path: ${filePath}`
+    const dateStr = stat.mtime.toISOString().split('T')[0]
+    const metadata = `[${dateStr}] File: ${name} | Type: ${fileType} | Path: ${filePath}`
     const chunks = chunkText(text, metadata)
 
     if (chunks.length > 0) {

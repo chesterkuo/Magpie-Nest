@@ -47,7 +47,7 @@ export async function bootstrap(): Promise<AppContext> {
       } else {
         db.enqueue(filePath, eventType)
       }
-    }, 5000) // 5 second debounce
+    }, 30000) // 30 second debounce per PRD
     console.log(`[watcher] Watching: ${dirs.join(', ')}`)
     return w
   }

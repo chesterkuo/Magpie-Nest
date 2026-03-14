@@ -10,6 +10,11 @@ export function AudioPlayer({ item }: { item: FileItem }) {
       <img src={item.thumbUrl} alt="" className="w-12 h-12 rounded object-cover bg-gray-700" />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium truncate">{item.name}</p>
+        {(item.artist || item.album) && (
+          <p className="text-xs text-gray-400 truncate">
+            {item.artist}{item.artist && item.album ? ' — ' : ''}{item.album}
+          </p>
+        )}
       </div>
       <div className="flex gap-2">
         <button
