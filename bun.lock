@@ -7,6 +7,9 @@
       "dependencies": {
         "jszip": "^3.10.1",
       },
+      "devDependencies": {
+        "sharp": "^0.34.5",
+      },
     },
     "packages/client": {
       "name": "@magpie/client",
