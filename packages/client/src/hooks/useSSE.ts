@@ -5,12 +5,29 @@ import { saveConversation } from '../lib/conversationStore'
 
 export type { Message }
 
-export function useSSE() {
+export function useSSE(initialConversationId?: string) {
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const lastAssistantTextRef = useRef('')
-  const [conversationId] = useState(() => nanoid())
+  const [conversationId, setConversationId] = useState(initialConversationId || nanoid)
   const messagesRef = useRef<Message[]>([])
+
+  // Load existing conversation if an ID was provided
+  useEffect(() => {
+    if (!initialConversationId) return
+    const token = localStorage.getItem('magpie-token') || 'magpie-dev'
+    fetch(`/api/conversations/${initialConversationId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.messages) {
+          setMessages(data.messages)
+          messagesRef.current = data.messages
+        }
+      })
+      .catch(() => {})
+  }, [initialConversationId])
 
   const sendMessage = useCallback(async (text: string) => {
     setMessages((prev) => [...prev, { role: 'user', text }])
@@ -27,7 +44,10 @@ export function useSSE() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ message: text }),
+        body: JSON.stringify({
+          message: text,
+          history: messagesRef.current.map(m => ({ role: m.role, content: m.text })),
+        }),
       })
 
       const reader = res.body!.getReader()
@@ -93,6 +113,12 @@ export function useSSE() {
     }
   }, [])
 
+  const startNewChat = useCallback(() => {
+    setMessages([])
+    messagesRef.current = []
+    setConversationId(nanoid())
+  }, [])
+
   // TTS auto-playback
   useEffect(() => {
     if (isLoading || !lastAssistantTextRef.current) return
@@ -131,5 +157,5 @@ export function useSSE() {
     }).catch(() => {})
   }, [isLoading])
 
-  return { messages, isLoading, sendMessage }
+  return { messages, isLoading, sendMessage, conversationId, startNewChat }
 }

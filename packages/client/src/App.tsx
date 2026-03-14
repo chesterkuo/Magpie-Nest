@@ -3,6 +3,7 @@ import { Chat } from './routes/Chat'
 import { Recent } from './routes/Recent'
 import { Media } from './routes/Media'
 import { Settings } from './routes/Settings'
+import { ConversationList } from './routes/ConversationList'
 import { PlaybackProvider } from './hooks/usePlayback'
 import { PlaybackBar } from './components/PlaybackBar'
 import { useOnlineStatus } from './hooks/useOnlineStatus'
@@ -22,6 +23,8 @@ export function App() {
         <main className="flex-1 overflow-y-auto">
           <Routes>
             <Route path="/" element={<Chat />} />
+            <Route path="/chat/:conversationId" element={<Chat />} />
+            <Route path="/conversations" element={<ConversationList />} />
             <Route path="/recent" element={<Recent />} />
             <Route path="/media" element={<Media />} />
             <Route path="/settings" element={<Settings />} />
@@ -33,6 +36,7 @@ export function App() {
         <nav className="flex border-t border-gray-800 bg-gray-900">
           {[
             { to: '/', label: 'Chat' },
+            { to: '/conversations', label: 'History' },
             { to: '/recent', label: 'Recent' },
             { to: '/media', label: 'Media' },
             { to: '/settings', label: 'Settings' },

@@ -1,10 +1,12 @@
 import { useRef, useEffect } from 'react'
+import { useParams } from 'react-router'
 import { useSSE } from '../hooks/useSSE'
 import { ChatInput } from '../components/ChatInput'
 import { MessageList } from '../components/MessageList'
 
 export function Chat() {
-  const { messages, isLoading, sendMessage } = useSSE()
+  const { conversationId } = useParams<{ conversationId?: string }>()
+  const { messages, isLoading, sendMessage } = useSSE(conversationId)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
