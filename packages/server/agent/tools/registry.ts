@@ -45,6 +45,16 @@ const toolImplementations: Record<string, (args: any) => Promise<any>> = {
       filtered = results.filter((r) => r.file_type === args.file_type)
     }
 
+    if (args.days_ago) {
+      const cutoff = new Date()
+      cutoff.setDate(cutoff.getDate() - args.days_ago)
+      const cutoffStr = cutoff.toISOString()
+      filtered = filtered.filter((r) => {
+        const file = ctx.db.getFileById(r.file_id)
+        return file && file.modified_at >= cutoffStr
+      })
+    }
+
     const seen = new Set<string>()
     const unique = filtered.filter((r) => {
       if (seen.has(r.file_id)) return false
