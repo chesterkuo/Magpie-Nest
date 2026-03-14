@@ -9,10 +9,14 @@ const ollama = new Ollama({
 const MODEL = process.env.OLLAMA_MODEL || 'qwen3:8b'
 const MAX_ITERATIONS = 5
 
-export async function* runAgent(userMessage: string): AsyncGenerator<AgentChunk> {
+export async function* runAgent(
+  userMessage: string,
+  history: Array<{ role: string; content: string }> = []
+): AsyncGenerator<AgentChunk> {
   const tools = buildToolDefinitions()
   const messages: any[] = [
     { role: 'system', content: SYSTEM_PROMPT },
+    ...history.slice(-20), // Keep last 20 messages for context window management
     { role: 'user', content: userMessage },
   ]
 

@@ -5,7 +5,10 @@ import { runAgent } from '../agent/loop'
 export const chatRoute = new Hono()
 
 chatRoute.post('/chat', async (c) => {
-  const { message } = await c.req.json<{ message: string }>()
+  const { message, history } = await c.req.json<{
+    message: string
+    history?: Array<{ role: string; content: string }>
+  }>()
 
   if (!message?.trim()) {
     return c.json({ error: 'Message is required' }, 400)
@@ -13,7 +16,7 @@ chatRoute.post('/chat', async (c) => {
 
   return streamSSE(c, async (stream) => {
     try {
-      for await (const chunk of runAgent(message)) {
+      for await (const chunk of runAgent(message, history || [])) {
         await stream.writeSSE({
           data: JSON.stringify(chunk),
           event: 'chunk',
