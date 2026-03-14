@@ -1,3 +1,6 @@
+// Set DATA_DIR before importing stream route (it reads env at module load)
+process.env.DATA_DIR = '/tmp/magpie-e2e-api-test'
+
 import { describe, it, expect, beforeAll, afterAll } from 'bun:test'
 import { Hono } from 'hono'
 import { mkdirSync, rmSync, writeFileSync } from 'fs'
@@ -11,6 +14,7 @@ import { createPlaylistsRoute } from '../routes/playlists'
 import { createConversationsRoute } from '../routes/conversations'
 import { createSettingsRoute } from '../routes/settings'
 import { chatRoute } from '../routes/chat'
+import { streamRoute } from '../routes/stream'
 
 const TEST_DIR = '/tmp/magpie-e2e-api-test'
 const AUTH = { Authorization: 'Bearer magpie-dev' }
@@ -51,6 +55,7 @@ describe('E2E API Integration', () => {
     api.route('/', createConversationsRoute(db))
     api.route('/', createSettingsRoute(db, getWatchDirs, setWatchDirs))
     api.route('/', chatRoute)
+    api.route('/', streamRoute)
   })
 
   afterAll(() => {
@@ -571,6 +576,54 @@ describe('E2E API Integration', () => {
     it('GET /api/settings without auth returns 401', async () => {
       const res = await req(app, '/api/settings')
       expect(res.status).toBe(401)
+    })
+  })
+
+  // ---------- Flow 8: Stream route path traversal prevention ----------
+
+  describe('Flow 8: Stream route path traversal prevention', () => {
+    beforeAll(() => {
+      // Create a valid HLS segment for baseline test
+      mkdirSync(`${TEST_DIR}/hls-cache/valid-id`, { recursive: true })
+      writeFileSync(`${TEST_DIR}/hls-cache/valid-id/segment0.ts`, 'fake-ts-data')
+      writeFileSync(`${TEST_DIR}/hls-cache/valid-id/playlist.m3u8`, '#EXTM3U\n#EXT-X-TARGETDURATION:10\nfake')
+    })
+
+    it('GET /api/stream/valid-id/segment0.ts returns 200 for valid segment', async () => {
+      const res = await req(app, '/api/stream/valid-id/segment0.ts', { headers: AUTH })
+      expect(res.status).toBe(200)
+      expect(res.headers.get('Content-Type')).toBe('video/mp2t')
+    })
+
+    it('GET /api/stream/valid-id/playlist.m3u8 returns 200 for valid playlist', async () => {
+      const res = await req(app, '/api/stream/valid-id/playlist.m3u8', { headers: AUTH })
+      expect(res.status).toBe(200)
+      expect(res.headers.get('Content-Type')).toBe('application/vnd.apple.mpegurl')
+    })
+
+    it('segment with ../ traversal returns 400', async () => {
+      const res = await req(app, '/api/stream/valid-id/..%2F..%2Fetc%2Fpasswd', { headers: AUTH })
+      expect(res.status).toBe(400)
+    })
+
+    it('segment with backslash traversal returns 400', async () => {
+      const res = await req(app, '/api/stream/valid-id/..%5C..%5Cetc%5Cpasswd', { headers: AUTH })
+      expect(res.status).toBe(400)
+    })
+
+    it('id with ../ traversal returns 400', async () => {
+      const res = await req(app, '/api/stream/..%2F..%2Fetc/segment0.ts', { headers: AUTH })
+      expect(res.status).toBe(400)
+    })
+
+    it('id with traversal in playlist route returns 400', async () => {
+      const res = await req(app, '/api/stream/..%2F..%2Fetc/playlist.m3u8', { headers: AUTH })
+      expect(res.status).toBe(400)
+    })
+
+    it('nonexistent valid segment returns 404', async () => {
+      const res = await req(app, '/api/stream/valid-id/nonexistent.ts', { headers: AUTH })
+      expect(res.status).toBe(404)
     })
   })
 })
