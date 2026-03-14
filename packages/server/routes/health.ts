@@ -4,7 +4,7 @@ import type { VectorDb } from '../services/lancedb'
 
 const startTime = Date.now()
 
-export function createHealthRoute(db: MagpieDb, vectorDb: VectorDb) {
+export function createHealthRoute(db: MagpieDb, vectorDb: VectorDb, getWatchDirs: () => string[]) {
   const route = new Hono()
 
   route.get('/health', async (c) => {
@@ -88,7 +88,10 @@ export function createHealthRoute(db: MagpieDb, vectorDb: VectorDb) {
         whisper: whisperStatus,
         kokoro: { status: kokoroRunning ? 'ok' : 'unavailable', processRunning: kokoroRunning },
       },
-      disk: { dataDir: dataDirDisk, watchDirs: [] },
+      disk: {
+        dataDir: dataDirDisk,
+        watchDirs: await Promise.all(getWatchDirs().map(d => getDiskInfo(d))),
+      },
       uptime: Math.floor((Date.now() - startTime) / 1000),
       version: '1.0.0',
     })

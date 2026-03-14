@@ -25,6 +25,7 @@ export async function bootstrap(): Promise<AppContext> {
   }
 
   let currentWatchDirs = [...WATCH_DIRS]
+  let currentWatcher: { close: () => Promise<void> } | null = null
 
   const db = createDb(SQLITE_PATH)
   const vectorDb = await createVectorDb(LANCEDB_PATH)
@@ -37,24 +38,31 @@ export async function bootstrap(): Promise<AppContext> {
     dataDir: DATA_DIR,
   })
 
-  // Start file watcher if directories configured
-  if (WATCH_DIRS.length > 0) {
-    createWatcher(WATCH_DIRS, (filePath, eventType) => {
+  function startWatcher(dirs: string[]) {
+    if (dirs.length === 0) return null
+    const w = createWatcher(dirs, (filePath, eventType) => {
       console.log(`[watcher] ${eventType}: ${filePath}`)
       if (eventType === 'deleted') {
         db.deleteFileByPath(filePath)
       } else {
         db.enqueue(filePath, eventType)
       }
-    })
-    console.log(`[watcher] Watching: ${WATCH_DIRS.join(', ')}`)
+    }, 5000) // 5 second debounce
+    console.log(`[watcher] Watching: ${dirs.join(', ')}`)
+    return w
   }
+
+  currentWatcher = startWatcher(WATCH_DIRS)
 
   console.log('[magpie] Server bootstrapped')
   return {
     db,
     vectorDb,
     getWatchDirs: () => currentWatchDirs,
-    setWatchDirs: (dirs: string[]) => { currentWatchDirs = dirs },
+    setWatchDirs: (dirs: string[]) => {
+      if (currentWatcher) currentWatcher.close()
+      currentWatchDirs = dirs
+      currentWatcher = startWatcher(dirs)
+    },
   }
 }

@@ -16,7 +16,7 @@ describe('GET /api/health', () => {
     const mockVectorDb = { count: async () => 0 } as any
     app = new Hono()
     app.use('*', authMiddleware())
-    app.route('/api', createHealthRoute(db, mockVectorDb))
+    app.route('/api', createHealthRoute(db, mockVectorDb, () => []))
   })
 
   afterEach(() => {

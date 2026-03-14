@@ -217,11 +217,14 @@ export function createDb(dbPath: string): MagpieDb {
     },
 
     dequeuePending(batchSize: number) {
-      const items = stmts.dequeuePending.all('pending', batchSize) as QueueItem[]
-      for (const item of items) {
-        stmts.markStatus.run('processing', item.id)
-      }
-      return items.map((i) => ({ ...i, status: 'processing' }))
+      const txn = db.transaction(() => {
+        const items = stmts.dequeuePending.all('pending', batchSize) as QueueItem[]
+        for (const item of items) {
+          stmts.markStatus.run('processing', item.id)
+        }
+        return items.map((i) => ({ ...i, status: 'processing' as const }))
+      })
+      return txn()
     },
 
     markQueueDone(id: number) {

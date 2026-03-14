@@ -22,7 +22,7 @@ app.use('*', cors())
 app.use('/api/*', authMiddleware())
 
 const api = app.basePath('/api')
-api.route('/', createHealthRoute(appContext.db, appContext.vectorDb))
+api.route('/', createHealthRoute(appContext.db, appContext.vectorDb, appContext.getWatchDirs))
 api.route('/', chatRoute)
 api.route('/', streamRoute)
 api.route('/', thumbRoute)

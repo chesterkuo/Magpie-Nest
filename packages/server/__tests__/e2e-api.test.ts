@@ -43,7 +43,7 @@ describe('E2E API Integration', () => {
     app.use('/api/*', authMiddleware())
 
     const api = app.basePath('/api')
-    api.route('/', createHealthRoute(db, vectorDb))
+    api.route('/', createHealthRoute(db, vectorDb, () => []))
     api.route('/', createFileRoute(db))
     api.route('/', createFilesRoute(db))
     api.route('/', createPlaylistsRoute(db))
