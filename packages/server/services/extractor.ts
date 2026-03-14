@@ -69,6 +69,22 @@ export async function extractText(
       return texts.join('\n\n')
     }
 
+    if (mimeType.includes('presentationml') || filePath.endsWith('.pptx')) {
+      const JSZip = (await import('jszip')).default
+      const buffer = await readFile(filePath)
+      const zip = await JSZip.loadAsync(buffer)
+      const texts: string[] = []
+      const slideFiles = Object.keys(zip.files)
+        .filter(f => /^ppt\/slides\/slide\d+\.xml$/.test(f))
+        .sort()
+      for (const slideFile of slideFiles) {
+        const xml = await zip.files[slideFile].async('text')
+        const text = xml.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+        if (text) texts.push(text)
+      }
+      return texts.join('\n\n')
+    }
+
     // Fallback: read as plain text
     if (mimeType.startsWith('text/') || ['.txt', '.md', '.csv'].some((e) => filePath.endsWith(e))) {
       const content = await readFile(filePath, 'utf-8')

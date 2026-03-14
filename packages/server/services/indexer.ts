@@ -113,6 +113,7 @@ function detectMime(filename: string): string {
     gif: 'image/gif',
     docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
     txt: 'text/plain',
     md: 'text/markdown',
     csv: 'text/csv',
