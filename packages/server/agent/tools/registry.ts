@@ -1,6 +1,7 @@
 import type { MagpieDb } from '../../services/db'
 import type { VectorDb } from '../../services/lancedb'
 import { fileTypeToRenderType, type FileItem, type FileType, type RenderType } from '@magpie/shared'
+import { hybridRank } from '../../services/search'
 
 interface ToolContext {
   db: MagpieDb
@@ -37,12 +38,18 @@ function toFileItem(record: any): FileItem {
 
 const toolImplementations: Record<string, (args: any) => Promise<any>> = {
   async search_files(args: { query: string; file_type?: string; days_ago?: number; limit?: number }) {
+    const limit = args.limit || 10
+    // Over-fetch 3x when filters applied to ensure enough results after filtering
+    const fetchMultiplier = (args.file_type || args.days_ago) ? 3 : 1
     const vector = await ctx.embedQuery(args.query)
-    const results = await ctx.vectorDb.search(vector, args.limit || 10)
+    const results = await ctx.vectorDb.search(vector, Math.max(limit * fetchMultiplier, limit * 3))
 
-    let filtered = results
+    // Hybrid re-rank with keyword scoring
+    const ranked = hybridRank(results, args.query, results.length)
+
+    let filtered = ranked
     if (args.file_type) {
-      filtered = results.filter((r) => r.file_type === args.file_type)
+      filtered = filtered.filter((r) => r.file_type === args.file_type)
     }
 
     if (args.days_ago) {
@@ -62,7 +69,10 @@ const toolImplementations: Record<string, (args: any) => Promise<any>> = {
       return true
     })
 
-    const files = unique
+    // Trim to requested limit after filtering
+    const trimmed = unique.slice(0, limit)
+
+    const files = trimmed
       .map((r) => ctx.db.getFileById(r.file_id))
       .filter(Boolean)
       .map(toFileItem)
@@ -139,6 +149,105 @@ const toolImplementations: Record<string, (args: any) => Promise<any>> = {
       `SELECT * FROM files${where} ORDER BY ${sort} DESC LIMIT 100`
     ).all(...params) as any[]
     return { files: files.map(toFileItem) }
+  },
+
+  async organize_files(args: { path: string; strategy?: string }) {
+    const { existsSync, mkdirSync, renameSync } = await import('fs')
+    const { join, basename, dirname, resolve } = await import('path')
+
+    const targetDir = resolve(args.path)
+    if (!existsSync(targetDir)) return { error: 'Directory not found' }
+
+    const strategy = args.strategy || 'type'
+    const typeFolders: Record<string, string> = {
+      video: 'Videos', audio: 'Music', pdf: 'Documents',
+      image: 'Images', doc: 'Documents',
+    }
+
+    const files = ctx.db.db.prepare(
+      'SELECT * FROM files WHERE path LIKE ?'
+    ).all(`${targetDir}%`) as any[]
+
+    const moved: string[] = []
+    const errors: string[] = []
+
+    for (const file of files) {
+      const fileDir = dirname(file.path)
+      // Only organize files directly in the target dir
+      if (resolve(fileDir) !== targetDir) continue
+
+      let destFolder: string
+      if (strategy === 'date') {
+        const date = (file.modified_at || '').split('T')[0]
+        destFolder = join(targetDir, date || 'unknown')
+      } else {
+        destFolder = join(targetDir, typeFolders[file.file_type] || 'Other')
+      }
+
+      try {
+        if (!existsSync(destFolder)) mkdirSync(destFolder, { recursive: true })
+        const newPath = join(destFolder, basename(file.path))
+        if (newPath === file.path) continue
+        renameSync(file.path, newPath)
+        ctx.db.db.prepare('UPDATE files SET path = ? WHERE id = ?').run(newPath, file.id)
+        moved.push(`${basename(file.path)} → ${basename(destFolder)}/`)
+      } catch (e: any) {
+        errors.push(`${basename(file.path)}: ${e.message}`)
+      }
+    }
+
+    return {
+      organized: moved.length,
+      moved,
+      errors: errors.length > 0 ? errors : undefined,
+    }
+  },
+
+  async batch_rename(args: { path: string; pattern: string; replacement: string; dry_run?: boolean }) {
+    const { existsSync, renameSync } = await import('fs')
+    const { basename, dirname, resolve } = await import('path')
+
+    const targetDir = resolve(args.path)
+    if (!existsSync(targetDir)) return { error: 'Directory not found' }
+
+    let regex: RegExp
+    try {
+      regex = new RegExp(args.pattern, 'g')
+    } catch (e: any) {
+      return { error: `Invalid pattern: ${e.message}` }
+    }
+
+    const files = ctx.db.db.prepare(
+      'SELECT * FROM files WHERE path LIKE ?'
+    ).all(`${targetDir}%`) as any[]
+
+    const previews: Array<{ from: string; to: string }> = []
+    const errors: string[] = []
+
+    for (const file of files) {
+      const oldName = basename(file.path)
+      const newName = oldName.replace(regex, args.replacement)
+      if (newName === oldName) continue
+
+      const newPath = resolve(dirname(file.path), newName)
+      previews.push({ from: oldName, to: newName })
+
+      if (!args.dry_run) {
+        try {
+          renameSync(file.path, newPath)
+          ctx.db.db.prepare('UPDATE files SET path = ?, name = ? WHERE id = ?').run(newPath, newName, file.id)
+        } catch (e: any) {
+          errors.push(`${oldName}: ${e.message}`)
+        }
+      }
+    }
+
+    return {
+      matched: previews.length,
+      previews,
+      applied: !args.dry_run,
+      errors: errors.length > 0 ? errors : undefined,
+    }
   },
 
   async get_disk_status(args: { path?: string }) {
@@ -286,6 +395,38 @@ export function buildToolDefinitions() {
           properties: {
             path: { type: 'string', description: 'Specific path to check (defaults to data directory)' },
           },
+        },
+      },
+    },
+    {
+      type: 'function',
+      function: {
+        name: 'organize_files',
+        description: 'Organize files in a directory by moving them into subfolders based on file type (Videos/, Music/, Documents/, Images/) or date.',
+        parameters: {
+          type: 'object',
+          properties: {
+            path: { type: 'string', description: 'Directory path to organize' },
+            strategy: { type: 'string', enum: ['type', 'date'], description: 'Organization strategy (default: type)' },
+          },
+          required: ['path'],
+        },
+      },
+    },
+    {
+      type: 'function',
+      function: {
+        name: 'batch_rename',
+        description: 'Rename multiple files matching a regex pattern. Supports dry_run to preview changes before applying.',
+        parameters: {
+          type: 'object',
+          properties: {
+            path: { type: 'string', description: 'Directory containing files to rename' },
+            pattern: { type: 'string', description: 'Regex pattern to match in filenames' },
+            replacement: { type: 'string', description: 'Replacement string (supports $1, $2 capture groups)' },
+            dry_run: { type: 'boolean', description: 'If true, show preview without renaming (default: false)' },
+          },
+          required: ['path', 'pattern', 'replacement'],
         },
       },
     },
