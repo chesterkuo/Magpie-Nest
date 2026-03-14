@@ -10,6 +10,7 @@ import { createFilesRoute } from '../routes/files'
 import { createPlaylistsRoute } from '../routes/playlists'
 import { createConversationsRoute } from '../routes/conversations'
 import { createSettingsRoute } from '../routes/settings'
+import { chatRoute } from '../routes/chat'
 
 const TEST_DIR = '/tmp/magpie-e2e-api-test'
 const AUTH = { Authorization: 'Bearer magpie-dev' }
@@ -49,6 +50,7 @@ describe('E2E API Integration', () => {
     api.route('/', createPlaylistsRoute(db))
     api.route('/', createConversationsRoute(db))
     api.route('/', createSettingsRoute(db, getWatchDirs, setWatchDirs))
+    api.route('/', chatRoute)
   })
 
   afterAll(() => {
@@ -370,6 +372,13 @@ describe('E2E API Integration', () => {
       const res = await req(app, '/api/conversations/nonexistent', { headers: AUTH })
       expect(res.status).toBe(404)
     })
+
+    it('GET /api/conversations?limit=1 returns only 1 conversation', async () => {
+      const res = await req(app, '/api/conversations?limit=1', { headers: AUTH })
+      expect(res.status).toBe(200)
+      const body = await res.json() as any
+      expect(body.conversations).toHaveLength(1)
+    })
   })
 
   // ---------- Flow 4: Settings & Health ----------
@@ -423,6 +432,98 @@ describe('E2E API Integration', () => {
       const res = await req(app, '/api/settings', { headers: AUTH })
       const body = await res.json() as any
       expect(body.indexing.totalIndexed).toBe(5)
+    })
+  })
+
+  // ---------- Flow 6: File Metadata in Responses ----------
+
+  describe('Flow 6: File Metadata in Responses', () => {
+    beforeAll(() => {
+      const now = new Date().toISOString()
+      db.upsertFile({
+        id: 'f-meta-audio', path: '/tmp/meta-song.mp3', name: 'meta-song.mp3',
+        mime_type: 'audio/mpeg', size: 4000000, file_type: 'audio', modified_at: now,
+        meta: JSON.stringify({ duration: 120, artist: 'Test Artist', album: 'Test Album' }),
+        hash: 'hash-meta-audio',
+      })
+      db.upsertFile({
+        id: 'f-meta-video', path: '/tmp/meta-movie.mp4', name: 'meta-movie.mp4',
+        mime_type: 'video/mp4', size: 800000000, file_type: 'video', modified_at: now,
+        meta: JSON.stringify({ duration: 3600, width: 1920, height: 1080 }),
+        hash: 'hash-meta-video',
+      })
+      db.upsertFile({
+        id: 'f-meta-image', path: '/tmp/meta-photo.jpg', name: 'meta-photo.jpg',
+        mime_type: 'image/jpeg', size: 6000000, file_type: 'image', modified_at: now,
+        meta: JSON.stringify({ width: 4000, height: 3000 }),
+        hash: 'hash-meta-image',
+      })
+    })
+
+    it('audio file response has duration, artist, album', async () => {
+      const res = await req(app, '/api/files?type=audio', { headers: AUTH })
+      expect(res.status).toBe(200)
+      const body = await res.json() as any
+      const audio = body.files.find((f: any) => f.id === 'f-meta-audio')
+      expect(audio).toBeDefined()
+      expect(audio.duration).toBe(120)
+      expect(audio.artist).toBe('Test Artist')
+      expect(audio.album).toBe('Test Album')
+    })
+
+    it('video file response has duration, width, height', async () => {
+      const res = await req(app, '/api/files?type=video', { headers: AUTH })
+      expect(res.status).toBe(200)
+      const body = await res.json() as any
+      const video = body.files.find((f: any) => f.id === 'f-meta-video')
+      expect(video).toBeDefined()
+      expect(video.duration).toBe(3600)
+      expect(video.width).toBe(1920)
+      expect(video.height).toBe(1080)
+    })
+
+    it('image file response has width, height', async () => {
+      const res = await req(app, '/api/files?type=image', { headers: AUTH })
+      expect(res.status).toBe(200)
+      const body = await res.json() as any
+      const image = body.files.find((f: any) => f.id === 'f-meta-image')
+      expect(image).toBeDefined()
+      expect(image.width).toBe(4000)
+      expect(image.height).toBe(3000)
+    })
+
+    it('files with empty meta have no metadata fields', async () => {
+      const res = await req(app, '/api/files', { headers: AUTH })
+      expect(res.status).toBe(200)
+      const body = await res.json() as any
+      // f-pdf-1 was seeded with meta: '{}'
+      const pdf = body.files.find((f: any) => f.id === 'f-pdf-1')
+      expect(pdf).toBeDefined()
+      expect(pdf.duration).toBeUndefined()
+      expect(pdf.artist).toBeUndefined()
+      expect(pdf.album).toBeUndefined()
+      expect(pdf.width).toBeUndefined()
+      expect(pdf.height).toBeUndefined()
+    })
+  })
+
+  // ---------- Flow 7: Chat Accepts History ----------
+
+  describe('Flow 7: Chat Accepts History', () => {
+    it('POST /api/chat with history returns 200 SSE stream', async () => {
+      const res = await req(app, '/api/chat', {
+        method: 'POST',
+        headers: JSON_AUTH,
+        body: JSON.stringify({
+          message: 'hello',
+          history: [
+            { role: 'user', content: 'previous message' },
+            { role: 'assistant', content: 'previous response' },
+          ],
+        }),
+      })
+      // Should not reject — 200 or streaming response
+      expect(res.status).toBe(200)
     })
   })
 

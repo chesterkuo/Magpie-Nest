@@ -95,6 +95,21 @@ describe('MagpieDb', () => {
     expect(jobs[0].status).toBe('processing')
   })
 
+  it('dequeuePending does not return same items twice (atomicity)', () => {
+    db.enqueue('/tmp/atomic1.pdf', 'created')
+    db.enqueue('/tmp/atomic2.pdf', 'created')
+    const first = db.dequeuePending(5)
+    const second = db.dequeuePending(5)
+    expect(first.length).toBe(2)
+    // Second call should return nothing — items are already 'processing'
+    expect(second.length).toBe(0)
+  })
+
+  it('dequeuePending returns empty when no pending items exist', () => {
+    const jobs = db.dequeuePending(5)
+    expect(jobs.length).toBe(0)
+  })
+
   describe('playlists', () => {
     it('creates and lists playlists', () => {
       db.createPlaylist('pl-1', 'My Playlist')

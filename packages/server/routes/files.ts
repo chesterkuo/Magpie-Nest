@@ -14,12 +14,22 @@ export function createFilesRoute(db: MagpieDb) {
     const offset = Number(c.req.query('offset') || '0')
 
     const result = db.listFiles({ limit, offset, sort, order, file_type, days })
-    const files = result.files.map(r => ({
-      id: r.id, name: r.name, type: r.file_type as FileType,
-      size: r.size, modified: r.modified_at,
-      renderType: fileTypeToRenderType(r.file_type),
-      streamUrl: `/api/stream/${r.id}`, thumbUrl: `/api/thumb/${r.id}`,
-    }))
+    const files = result.files.map(r => {
+      let meta: Record<string, any> = {}
+      try { meta = JSON.parse(r.meta || '{}') } catch {}
+      const item: Record<string, any> = {
+        id: r.id, name: r.name, type: r.file_type as FileType,
+        size: r.size, modified: r.modified_at,
+        renderType: fileTypeToRenderType(r.file_type),
+        streamUrl: `/api/stream/${r.id}`, thumbUrl: `/api/thumb/${r.id}`,
+      }
+      if (meta.duration !== undefined) item.duration = meta.duration
+      if (meta.artist !== undefined) item.artist = meta.artist
+      if (meta.album !== undefined) item.album = meta.album
+      if (meta.width !== undefined) item.width = meta.width
+      if (meta.height !== undefined) item.height = meta.height
+      return item
+    })
 
     return c.json({ files, total: result.total, limit, offset })
   })

@@ -40,4 +40,15 @@ describe('extractText', () => {
     const text = await extractText('/tmp/nonexistent.mp4', 'video/mp4', 'video')
     expect(text).toBe('')
   })
+
+  it('returns empty string for nonexistent .pptx file (graceful error handling)', async () => {
+    const text = await extractText('/tmp/nonexistent-magpie-test.pptx', 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'doc')
+    expect(text).toBe('')
+  })
+})
+
+describe('detectFileType pptx', () => {
+  it('detects .pptx as doc', () => {
+    expect(detectFileType('slides.pptx', 'application/vnd.openxmlformats-officedocument.presentationml.presentation')).toBe('doc')
+  })
 })
