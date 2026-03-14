@@ -12,7 +12,7 @@ echo "=== Magpie Voice Setup ==="
 
 # 1. whisper.cpp
 if [ ! -f "$BIN_DIR/whisper-cpp" ]; then
-  echo "[1/3] Building whisper.cpp..."
+  echo "[1/4] Building whisper.cpp..."
   TMPDIR=$(mktemp -d)
   git clone --depth 1 https://github.com/ggerganov/whisper.cpp.git "$TMPDIR/whisper.cpp"
   cd "$TMPDIR/whisper.cpp"
@@ -22,27 +22,48 @@ if [ ! -f "$BIN_DIR/whisper-cpp" ]; then
   rm -rf "$TMPDIR"
   echo "  whisper.cpp built successfully"
 else
-  echo "[1/3] whisper.cpp already installed, skipping"
+  echo "[1/4] whisper.cpp already installed, skipping"
 fi
 
-# 2. Whisper model
+# 2. Whisper models (English + Multilingual for Mandarin)
 if [ ! -f "$MODELS_DIR/ggml-base.en.bin" ]; then
-  echo "[2/3] Downloading whisper base.en model..."
+  echo "[2/4] Downloading whisper base.en model..."
   curl -L -o "$MODELS_DIR/ggml-base.en.bin" \
     "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en.bin"
-  echo "  Model downloaded"
+  echo "  English model downloaded"
 else
-  echo "[2/3] Whisper model already present, skipping"
+  echo "[2/4] English whisper model already present, skipping"
+fi
+
+if [ ! -f "$MODELS_DIR/ggml-base.bin" ]; then
+  echo "     Downloading whisper base (multilingual) model..."
+  curl -L -o "$MODELS_DIR/ggml-base.bin" \
+    "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin"
+  echo "  Multilingual model downloaded"
+else
+  echo "     Multilingual whisper model already present, skipping"
 fi
 
 # 3. Kokoro venv
 if [ ! -d "$VENV_DIR" ]; then
-  echo "[3/3] Setting up Kokoro TTS venv..."
+  echo "[3/4] Setting up Kokoro TTS venv..."
   python3 -m venv "$VENV_DIR"
   "$VENV_DIR/bin/pip" install --quiet kokoro-onnx fastapi uvicorn soundfile
   echo "  Kokoro venv created"
 else
-  echo "[3/3] Kokoro venv already exists, skipping"
+  echo "[3/4] Kokoro venv already exists, skipping"
+fi
+
+# 4. Kokoro ONNX model
+if [ ! -f "$MODELS_DIR/kokoro-v1.0.onnx" ]; then
+  echo "[4/4] Downloading Kokoro ONNX model..."
+  curl -L -o "$MODELS_DIR/kokoro-v1.0.onnx" \
+    "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx"
+  curl -L -o "$MODELS_DIR/voices-v1.0.bin" \
+    "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin"
+  echo "  Kokoro models downloaded"
+else
+  echo "[4/4] Kokoro models already present, skipping"
 fi
 
 echo "=== Setup complete ==="
