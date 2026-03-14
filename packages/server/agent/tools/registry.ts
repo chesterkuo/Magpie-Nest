@@ -1,6 +1,6 @@
 import type { MagpieDb } from '../../services/db'
 import type { VectorDb } from '../../services/lancedb'
-import type { FileItem, FileType, RenderType } from '@magpie/shared'
+import { fileTypeToRenderType, type FileItem, type FileType, type RenderType } from '@magpie/shared'
 
 interface ToolContext {
   db: MagpieDb
@@ -15,18 +15,9 @@ export function initToolContext(context: ToolContext) {
   ctx = context
 }
 
-function fileTypeToRenderType(type: FileType): RenderType {
-  const map: Record<FileType, RenderType> = {
-    video: 'video_card',
-    audio: 'audio_player',
-    pdf: 'pdf_preview',
-    image: 'image_grid',
-    doc: 'file_list',
-  }
-  return map[type] || 'file_list'
-}
-
 function toFileItem(record: any): FileItem {
+  let meta: Record<string, any> = {}
+  try { meta = JSON.parse(record.meta || '{}') } catch {}
   return {
     id: record.id,
     name: record.name || record.file_name,
@@ -36,6 +27,11 @@ function toFileItem(record: any): FileItem {
     renderType: fileTypeToRenderType(record.file_type as FileType),
     streamUrl: `/api/stream/${record.id}`,
     thumbUrl: `/api/thumb/${record.id}`,
+    ...(meta.duration != null && { duration: meta.duration }),
+    ...(meta.artist && { artist: meta.artist }),
+    ...(meta.album && { album: meta.album }),
+    ...(meta.width && { width: meta.width }),
+    ...(meta.height && { height: meta.height }),
   }
 }
 

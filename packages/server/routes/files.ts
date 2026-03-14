@@ -1,14 +1,6 @@
 import { Hono } from 'hono'
 import type { MagpieDb } from '../services/db'
-import type { FileType, RenderType } from '@magpie/shared'
-
-function fileTypeToRenderType(type: string): RenderType {
-  const map: Record<string, RenderType> = {
-    video: 'video_card', audio: 'audio_player', pdf: 'pdf_preview',
-    image: 'image_grid', doc: 'file_list',
-  }
-  return map[type] || 'file_list'
-}
+import { fileTypeToRenderType, type FileType } from '@magpie/shared'
 
 export function createFilesRoute(db: MagpieDb) {
   const route = new Hono()

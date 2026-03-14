@@ -7,6 +7,17 @@ export type RenderType =
 
 export type FileType = 'video' | 'audio' | 'pdf' | 'image' | 'doc'
 
+export function fileTypeToRenderType(type: FileType): RenderType {
+  const map: Record<FileType, RenderType> = {
+    video: 'video_card',
+    audio: 'audio_player',
+    pdf: 'pdf_preview',
+    image: 'image_grid',
+    doc: 'file_list',
+  }
+  return map[type] || 'file_list'
+}
+
 export interface FileItem {
   id: string
   name: string
@@ -16,6 +27,12 @@ export interface FileItem {
   renderType: RenderType
   streamUrl: string
   thumbUrl: string
+  // Optional metadata
+  duration?: number       // seconds (video/audio)
+  artist?: string         // audio ID3
+  album?: string          // audio ID3
+  width?: number          // image/video dimensions
+  height?: number         // image/video dimensions
 }
 
 export interface AgentChunk {
