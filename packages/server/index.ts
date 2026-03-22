@@ -10,6 +10,7 @@ import { createFilesRoute } from './routes/files'
 import { createPlaylistsRoute } from './routes/playlists'
 import { createConversationsRoute } from './routes/conversations'
 import { createSettingsRoute } from './routes/settings'
+import { createUploadRoute } from './routes/upload'
 import { sttRoute } from './routes/stt'
 import { ttsRoute } from './routes/tts'
 import { bootstrap } from './bootstrap'
@@ -31,6 +32,7 @@ api.route('/', createFilesRoute(appContext.db))
 api.route('/', createPlaylistsRoute(appContext.db))
 api.route('/', createConversationsRoute(appContext.db))
 api.route('/', createSettingsRoute(appContext.db, appContext.getWatchDirs, appContext.setWatchDirs, appContext.providerManager))
+api.route('/', createUploadRoute(appContext.db, appContext.getWatchDirs))
 api.route('/', sttRoute)
 api.route('/', ttsRoute)
 
