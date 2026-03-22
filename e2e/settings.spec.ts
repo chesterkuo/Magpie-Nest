@@ -9,7 +9,14 @@ test.describe('Settings Page', () => {
         contentType: 'application/json',
         body: JSON.stringify({
           status: 'ok',
-          services: { ollama: { status: 'running', model: 'qwen3:8b' } },
+          services: {
+            llm: { status: 'ok', model: 'qwen3:8b', loaded: true, provider: 'ollama' },
+            embedding: { status: 'ok', model: 'nomic-embed-text', provider: 'ollama' },
+            lancedb: { status: 'ok', totalChunks: 500 },
+            sqlite: { status: 'ok', totalFiles: 42 },
+            whisper: { status: 'ok' },
+            kokoro: { status: 'ok' },
+          },
           uptime: 3600,
           version: '1.0.0',
         }),
@@ -23,6 +30,8 @@ test.describe('Settings Page', () => {
           body: JSON.stringify({
             watchDirs: ['/data/files'],
             indexing: { queueLength: 0, totalIndexed: 42, lastIndexedAt: '2026-03-14T10:00:00Z' },
+            llm: { provider: 'ollama', apiKey: '', baseUrl: '', model: 'qwen3:8b', ollamaHost: 'http://localhost:11434' },
+            embedding: { provider: 'ollama', apiKey: '', baseUrl: '', model: 'nomic-embed-text', ollamaHost: 'http://localhost:11434', dimensions: 768 },
             version: '1.0.0',
           }),
         })
@@ -39,10 +48,10 @@ test.describe('Settings Page', () => {
 
   test('displays system status section', async ({ page }) => {
     await expect(page.locator('h2', { hasText: 'System Status' })).toBeVisible()
-    await expect(page.getByText('ok', { exact: true })).toBeVisible()
+    await expect(page.getByText('ok', { exact: false })).toBeVisible()
     await expect(page.getByText('qwen3:8b')).toBeVisible()
-    await expect(page.getByText('Files indexed: 42')).toBeVisible()
-    await expect(page.getByText('0 pending')).toBeVisible()
+    await expect(page.getByText('Indexed: 42')).toBeVisible()
+    await expect(page.getByText('Queue: 0')).toBeVisible()
   })
 
   test('displays watch directories', async ({ page }) => {
@@ -65,13 +74,14 @@ test.describe('Settings Page', () => {
   test('displays voice settings section', async ({ page }) => {
     await expect(page.locator('h2', { hasText: 'Voice' })).toBeVisible()
     await expect(page.locator('text=Read responses aloud')).toBeVisible()
-    const checkbox = page.locator('input[type="checkbox"]')
-    await expect(checkbox).toBeVisible()
+    // Voice toggle is now a custom ToggleSwitch button, not a checkbox
+    const toggle = page.locator('button[type="button"]').filter({ has: page.locator('span.rounded-full') })
+    await expect(toggle.first()).toBeVisible()
   })
 
-  test('displays authentication section with token', async ({ page }) => {
-    await expect(page.locator('h2', { hasText: 'Authentication' })).toBeVisible()
-    await expect(page.locator('text=magpie-dev')).toBeVisible()
+  test('displays Chat Model and Embedding Model sections', async ({ page }) => {
+    await expect(page.locator('h2', { hasText: 'Chat Model' })).toBeVisible()
+    await expect(page.locator('h2', { hasText: 'Embedding Model' })).toBeVisible()
   })
 
   test('displays about section', async ({ page }) => {
