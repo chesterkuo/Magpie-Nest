@@ -33,7 +33,7 @@ export function useSSE(initialConversationId?: string) {
     setMessages((prev) => [...prev, { role: 'user', text }])
     setIsLoading(true)
 
-    const assistantMsg: Message = { role: 'assistant', text: '', items: [] }
+    const assistantMsg: Message = { role: 'assistant', text: '', items: [], thinking: 'thinking' }
     setMessages((prev) => [...prev, assistantMsg])
 
     try {
