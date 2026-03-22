@@ -6,9 +6,11 @@ const TEST_DIR = '/tmp/magpie-lance-test'
 
 describe('VectorDb', () => {
   let vdb: VectorDb
+  let vectorDb: VectorDb
 
   beforeEach(async () => {
     vdb = await createVectorDb(TEST_DIR)
+    vectorDb = vdb
   })
 
   afterEach(() => {
@@ -62,5 +64,20 @@ describe('VectorDb', () => {
     await vdb.deleteByFileId('f1')
     const results = await vdb.search(fakeVector, 10)
     expect(results.every((r) => r.file_id !== 'f1')).toBe(true)
+  })
+
+  it('dropTable clears all chunks', async () => {
+    // Add some chunks first
+    await vectorDb.addChunks([{
+      id: 'drop-1', file_id: 'f1', text: 'test', vector: new Array(768).fill(0.1),
+      file_name: 'test.txt', file_type: 'doc', file_path: '/tmp/test.txt',
+    }])
+    expect(await vectorDb.count()).toBe(1)
+    await vectorDb.dropTable()
+    expect(await vectorDb.count()).toBe(0)
+  })
+
+  it('getDimensions returns null for empty table', async () => {
+    expect(await vectorDb.getDimensions()).toBeNull()
   })
 })

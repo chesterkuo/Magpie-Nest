@@ -25,6 +25,8 @@ export interface VectorDb {
   search(queryVector: number[], limit: number): Promise<SearchResult[]>
   deleteByFileId(fileId: string): Promise<void>
   count(): Promise<number>
+  dropTable(): Promise<void>
+  getDimensions(): Promise<number | null>
 }
 
 export async function createVectorDb(dbPath: string): Promise<VectorDb> {
@@ -81,6 +83,24 @@ export async function createVectorDb(dbPath: string): Promise<VectorDb> {
         const table = await db.openTable('file_chunks')
         return await table.countRows()
       } catch { return 0 }
+    },
+
+    async dropTable() {
+      const tableNames = await db.tableNames()
+      if (tableNames.includes('file_chunks')) {
+        await db.dropTable('file_chunks')
+      }
+    },
+
+    async getDimensions() {
+      try {
+        const table = await db.openTable('file_chunks')
+        const rows = await table.query().limit(1).toArray()
+        if (rows.length > 0 && rows[0].vector) {
+          return (rows[0].vector as number[]).length
+        }
+      } catch {}
+      return null
     },
   }
 }
