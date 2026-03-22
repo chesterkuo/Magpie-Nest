@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { Routes, Route } from 'react-router'
 import { Chat } from './routes/Chat'
 import { Recent } from './routes/Recent'
@@ -13,16 +12,6 @@ import { useOnlineStatus } from './hooks/useOnlineStatus'
 
 export function App() {
   const online = useOnlineStatus()
-
-  useEffect(() => {
-    const mq = window.matchMedia('(prefers-color-scheme: dark)')
-    function update(e: MediaQueryListEvent | MediaQueryList) {
-      document.documentElement.classList.toggle('dark', e.matches)
-    }
-    update(mq)
-    mq.addEventListener('change', update)
-    return () => mq.removeEventListener('change', update)
-  }, [])
 
   return (
     <PlaybackProvider>
