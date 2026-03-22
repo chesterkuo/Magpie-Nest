@@ -31,7 +31,7 @@ Magpie is a self-hosted AI storage agent that runs entirely on your Mac Mini. Th
 | Runtime | [Bun](https://bun.sh) |
 | Server | [Hono](https://hono.dev) |
 | Frontend | React 19 + Vite + TailwindCSS v4 |
-| LLM | [Ollama](https://ollama.com) + Qwen3 8B |
+| LLM | OpenAI-compatible API (default: Gemini) or [Ollama](https://ollama.com) |
 | Vector DB | [LanceDB](https://lancedb.com) |
 | Database | SQLite (bun:sqlite) |
 | STT | [whisper.cpp](https://github.com/ggerganov/whisper.cpp) |
@@ -43,8 +43,9 @@ Magpie is a self-hosted AI storage agent that runs entirely on your Mac Mini. Th
 
 - macOS with Apple Silicon (M1/M2/M4)
 - [Bun](https://bun.sh) >= 1.0
-- [Docker](https://docker.com) (for Ollama only)
 - [FFmpeg](https://ffmpeg.org) (for media streaming and thumbnails)
+- An LLM API key (e.g. Google AI Studio for Gemini) **or** [Ollama](https://ollama.com) for fully local inference
+- [Docker](https://docker.com) _(optional — only if you prefer to run Ollama in a container)_
 
 ### 1. Clone and install
 
@@ -58,16 +59,25 @@ bun install
 
 ```bash
 cp .env.example .env
-# Edit .env to set your WATCH_DIRS (comma-separated paths to index)
+# Edit .env — at minimum set LLM_API_KEY and WATCH_DIRS
 ```
 
-### 3. Start Ollama
+See [LLM Provider Configuration](#llm-provider-configuration) below for details on configuring your preferred LLM provider.
+
+### 3. (Optional) Use Ollama for local inference
+
+If you prefer fully local inference instead of an external API, install Ollama and pull models:
 
 ```bash
-docker compose -f docker/compose.yml up -d
-docker exec magpie-ollama ollama pull qwen3:8b
-docker exec magpie-ollama ollama pull nomic-embed-text
+brew install ollama
+brew services start ollama
+ollama pull qwen3:4b
+ollama pull nomic-embed-text
 ```
+
+Then set `LLM_PROVIDER=ollama` and `EMBED_PROVIDER=ollama` in your `.env`.
+
+> **Docker alternative:** If you prefer running Ollama in a container, use `docker compose -f docker/compose.yml up -d` and pull models with `docker exec magpie-ollama ollama pull <model>`.
 
 ### 4. (Optional) Set up voice
 
@@ -163,13 +173,84 @@ bunx playwright test
 
 > First-time setup: `bun add -d @playwright/test && bunx playwright install chromium && sudo bunx playwright install-deps chromium`
 
+## LLM Provider Configuration
+
+Magpie supports multiple LLM providers via an OpenAI-compatible API interface. The **default provider is Gemini** through Google's OpenAI-compatible endpoint. Ollama remains supported as a fully local option.
+
+The chat model and embedding model can be configured independently — for example, you can use Gemini for chat and a local Ollama model for embeddings, or any other combination.
+
+Configuration can be set via environment variables in `.env` **or** through the **Settings page** in the UI at runtime.
+
+### Using Gemini (default)
+
+Get a free API key from [Google AI Studio](https://aistudio.google.com), then set in `.env`:
+
+```env
+LLM_PROVIDER=openai-compatible
+LLM_API_KEY=your-google-api-key
+LLM_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
+LLM_MODEL=gemini-2.5-flash
+
+EMBED_PROVIDER=openai-compatible
+EMBED_API_KEY=your-google-api-key
+EMBED_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
+EMBED_MODEL=gemini-embedding-2-preview
+```
+
+### Using any OpenAI-compatible provider
+
+Set `LLM_PROVIDER=openai-compatible` and point `LLM_BASE_URL` at any OpenAI-compatible endpoint (OpenAI, Groq, OpenRouter, etc.):
+
+```env
+LLM_PROVIDER=openai-compatible
+LLM_API_KEY=your-api-key
+LLM_BASE_URL=https://api.openai.com/v1
+LLM_MODEL=gpt-4o-mini
+```
+
+### Using Ollama (fully local)
+
+```env
+LLM_PROVIDER=ollama
+OLLAMA_HOST=http://localhost:11434
+OLLAMA_MODEL=qwen3:4b
+
+EMBED_PROVIDER=ollama
+OLLAMA_EMBED_MODEL=nomic-embed-text
+```
+
 ## Environment Variables
+
+### LLM (chat model)
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `LLM_PROVIDER` | `openai-compatible` | Provider: `openai-compatible` or `ollama` |
+| `LLM_API_KEY` | _(empty)_ | API key for the chat LLM provider |
+| `LLM_BASE_URL` | `https://generativelanguage.googleapis.com/v1beta/openai` | Base URL for OpenAI-compatible chat endpoint |
+| `LLM_MODEL` | `gemini-2.5-flash` | Chat model name |
+
+### Embedding model
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `EMBED_PROVIDER` | `openai-compatible` | Provider: `openai-compatible` or `ollama` |
+| `EMBED_API_KEY` | _(empty)_ | API key for the embedding provider |
+| `EMBED_BASE_URL` | `https://generativelanguage.googleapis.com/v1beta/openai` | Base URL for OpenAI-compatible embedding endpoint |
+| `EMBED_MODEL` | `gemini-embedding-2-preview` | Embedding model name |
+
+### Ollama (used when provider is `ollama`)
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `OLLAMA_HOST` | `http://localhost:11434` | Ollama API endpoint |
-| `OLLAMA_MODEL` | `qwen3:8b` | Chat model |
-| `OLLAMA_EMBED_MODEL` | `nomic-embed-text` | Embedding model |
+| `OLLAMA_MODEL` | `qwen3:4b` | Ollama chat model |
+| `OLLAMA_EMBED_MODEL` | `nomic-embed-text` | Ollama embedding model |
+
+### General
+
+| Variable | Default | Description |
+|----------|---------|-------------|
 | `DATA_DIR` | `./data` | Data storage directory |
 | `API_SECRET` | `magpie-dev` | API authentication token |
 | `PORT` | `8000` | Server port |
