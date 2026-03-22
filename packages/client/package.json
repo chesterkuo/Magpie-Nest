@@ -7,6 +7,7 @@
     "build": "vite build"
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
     "hls.js": "^1.6.15",
     "nanoid": "^5.1.6",
     "pdfjs-dist": "^5.5.207",

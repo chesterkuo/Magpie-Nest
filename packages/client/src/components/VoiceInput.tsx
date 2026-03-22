@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { MicrophoneIcon } from '@heroicons/react/24/solid'
 
 interface Props {
   onTranscript: (text: string) => void
@@ -72,13 +73,15 @@ export function VoiceInput({ onTranscript, disabled }: Props) {
       onMouseUp={stopRecording}
       onTouchStart={startRecording}
       onTouchEnd={stopRecording}
-      className={`px-3 py-2 rounded-lg text-sm font-medium ${
-        recording ? 'bg-red-600 animate-pulse' :
-        processing ? 'bg-gray-700 opacity-50' :
-        'bg-gray-700 hover:bg-gray-600'
+      className={`p-1.5 rounded-lg transition-colors ${
+        recording
+          ? 'ring-2 ring-rose-500 animate-pulse bg-rose-600 text-white'
+          : processing
+          ? 'opacity-50 text-gray-400 cursor-not-allowed'
+          : 'text-gray-400 hover:text-white'
       }`}
     >
-      {recording ? '...' : processing ? '...' : '\uD83C\uDFA4'}
+      <MicrophoneIcon className="w-5 h-5" />
     </button>
   )
 }

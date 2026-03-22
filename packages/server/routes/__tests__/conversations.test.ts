@@ -3,9 +3,6 @@ import { Hono } from 'hono'
 import { createDb, type MagpieDb } from '../../services/db'
 import { createConversationsRoute } from '../conversations'
 import { authMiddleware } from '../../middleware/auth'
-import { unlinkSync } from 'fs'
-
-const TEST_DB = '/tmp/magpie-route-conversations.db'
 const AUTH = { Authorization: 'Bearer magpie-dev' }
 
 function jsonHeaders(extra: Record<string, string> = {}) {
@@ -17,7 +14,7 @@ describe('Conversations API', () => {
   let app: Hono
 
   beforeEach(() => {
-    db = createDb(TEST_DB)
+    db = createDb(':memory:')
     app = new Hono()
     app.use('*', authMiddleware())
     app.route('/api', createConversationsRoute(db))
@@ -25,7 +22,6 @@ describe('Conversations API', () => {
 
   afterEach(() => {
     db.close()
-    try { unlinkSync(TEST_DB) } catch {}
   })
 
   it('requires auth (returns 401 without token)', async () => {

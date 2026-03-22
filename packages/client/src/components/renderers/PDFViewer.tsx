@@ -1,5 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import * as pdfjsLib from 'pdfjs-dist'
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ArrowsPointingOutIcon,
+  ArrowsPointingInIcon,
+} from '@heroicons/react/24/outline'
 import type { FileItem } from '@magpie/shared'
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
@@ -61,9 +67,13 @@ export function PDFViewer({ item }: { item: FileItem }) {
         <p className="text-sm font-medium truncate">{item.name}</p>
         <button
           onClick={() => setFullscreen(f => !f)}
-          className="px-2 py-1 bg-gray-700 rounded text-xs"
+          className="p-1.5 bg-gray-700 hover:bg-gray-600 rounded transition-colors"
+          aria-label={fullscreen ? 'Exit fullscreen' : 'Expand to fullscreen'}
         >
-          {fullscreen ? 'Exit' : 'Expand'}
+          {fullscreen
+            ? <ArrowsPointingInIcon className="w-4 h-4" />
+            : <ArrowsPointingOutIcon className="w-4 h-4" />
+          }
         </button>
       </div>
       <div className={fullscreen ? 'overflow-auto max-h-[calc(100vh-8rem)] flex justify-center' : ''}>
@@ -74,14 +84,20 @@ export function PDFViewer({ item }: { item: FileItem }) {
           <button
             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
             disabled={currentPage <= 1}
-            className="px-2 py-1 bg-gray-700 rounded disabled:opacity-40"
-          >Prev</button>
+            className="p-1.5 bg-gray-700 hover:bg-gray-600 rounded disabled:opacity-40 transition-colors"
+            aria-label="Previous page"
+          >
+            <ChevronLeftIcon className="w-4 h-4" />
+          </button>
           <span>{currentPage} / {numPages}</span>
           <button
             onClick={() => setCurrentPage(p => Math.min(numPages, p + 1))}
             disabled={currentPage >= numPages}
-            className="px-2 py-1 bg-gray-700 rounded disabled:opacity-40"
-          >Next</button>
+            className="p-1.5 bg-gray-700 hover:bg-gray-600 rounded disabled:opacity-40 transition-colors"
+            aria-label="Next page"
+          >
+            <ChevronRightIcon className="w-4 h-4" />
+          </button>
         </div>
       )}
     </>
@@ -96,7 +112,7 @@ export function PDFViewer({ item }: { item: FileItem }) {
   }
 
   return (
-    <div className="bg-gray-800 rounded-lg p-3">
+    <div className="bg-gray-800 rounded-xl p-4">
       {container}
     </div>
   )

@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { authMiddleware } from './middleware/auth'
 import { createHealthRoute } from './routes/health'
-import { chatRoute } from './routes/chat'
+import { createChatRoute } from './routes/chat'
 import { streamRoute } from './routes/stream'
 import { thumbRoute } from './routes/thumb'
 import { createFileRoute } from './routes/file'
@@ -22,15 +22,15 @@ app.use('*', cors())
 app.use('/api/*', authMiddleware())
 
 const api = app.basePath('/api')
-api.route('/', createHealthRoute(appContext.db, appContext.vectorDb, appContext.getWatchDirs))
-api.route('/', chatRoute)
+api.route('/', createHealthRoute(appContext.db, appContext.vectorDb, appContext.getWatchDirs, appContext.providerManager))
+api.route('/', createChatRoute(() => appContext.providerManager.getLLMProvider()))
 api.route('/', streamRoute)
 api.route('/', thumbRoute)
 api.route('/', createFileRoute(appContext.db))
 api.route('/', createFilesRoute(appContext.db))
 api.route('/', createPlaylistsRoute(appContext.db))
 api.route('/', createConversationsRoute(appContext.db))
-api.route('/', createSettingsRoute(appContext.db, appContext.getWatchDirs, appContext.setWatchDirs))
+api.route('/', createSettingsRoute(appContext.db, appContext.getWatchDirs, appContext.setWatchDirs, appContext.providerManager))
 api.route('/', sttRoute)
 api.route('/', ttsRoute)
 
@@ -44,5 +44,6 @@ app.get('*', async (c) => {
 
 export default {
   port: Number(process.env.PORT) || 8000,
+  idleTimeout: 120,
   fetch: app.fetch,
 }

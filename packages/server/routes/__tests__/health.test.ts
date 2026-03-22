@@ -3,25 +3,32 @@ import { Hono } from 'hono'
 import { createDb, type MagpieDb } from '../../services/db'
 import { createHealthRoute } from '../health'
 import { authMiddleware } from '../../middleware/auth'
-import { unlinkSync } from 'fs'
-
-const TEST_DB = '/tmp/magpie-route-health.db'
-
 describe('GET /api/health', () => {
   let db: MagpieDb
   let app: Hono
 
   beforeEach(() => {
-    db = createDb(TEST_DB)
+    db = createDb(':memory:')
     const mockVectorDb = { count: async () => 0 } as any
     app = new Hono()
     app.use('*', authMiddleware())
-    app.route('/api', createHealthRoute(db, mockVectorDb, () => []))
+    const mockProviderManager = {
+      getLLMProvider: () => ({
+        healthCheck: async () => ({ status: 'error', model: 'test', loaded: false }),
+        name: () => 'mock',
+        modelName: () => 'test',
+      }),
+      getEmbeddingProvider: () => ({
+        name: () => 'mock',
+        modelName: () => 'test',
+        dimensions: () => 768,
+      }),
+    } as any
+    app.route('/api', createHealthRoute(db, mockVectorDb, () => [], mockProviderManager))
   })
 
   afterEach(() => {
     db.close()
-    try { unlinkSync(TEST_DB) } catch {}
   })
 
   it('returns 200 with status object', async () => {
@@ -44,7 +51,8 @@ describe('GET /api/health', () => {
   it('contains all service statuses', async () => {
     const res = await app.request('/api/health')
     const data = await res.json() as any
-    expect(data.services.ollama).toBeDefined()
+    expect(data.services.llm).toBeDefined()
+    expect(data.services.embedding).toBeDefined()
     expect(data.services.lancedb).toBeDefined()
     expect(data.services.sqlite).toBeDefined()
     expect(data.services.whisper).toBeDefined()
@@ -58,10 +66,10 @@ describe('GET /api/health', () => {
     expect(data.services.sqlite.totalFiles).toBe(0)
   })
 
-  it('reports degraded or error status when Ollama is not running', async () => {
+  it('reports degraded or error status when LLM provider reports error', async () => {
     const res = await app.request('/api/health')
     const data = await res.json() as any
-    // In test env, Ollama is not running so status should not be 'ok'
+    // Mock LLM returns error status, so overall status should not be 'ok'
     expect(['error', 'degraded']).toContain(data.status)
   })
 

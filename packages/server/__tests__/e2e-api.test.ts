@@ -13,7 +13,7 @@ import { createFilesRoute } from '../routes/files'
 import { createPlaylistsRoute } from '../routes/playlists'
 import { createConversationsRoute } from '../routes/conversations'
 import { createSettingsRoute } from '../routes/settings'
-import { chatRoute } from '../routes/chat'
+import { createChatRoute } from '../routes/chat'
 import { streamRoute } from '../routes/stream'
 
 const TEST_DIR = '/tmp/magpie-e2e-api-test'
@@ -54,7 +54,7 @@ describe('E2E API Integration', () => {
     api.route('/', createPlaylistsRoute(db))
     api.route('/', createConversationsRoute(db))
     api.route('/', createSettingsRoute(db, getWatchDirs, setWatchDirs))
-    api.route('/', chatRoute)
+    api.route('/', createChatRoute(() => ({ chat: async () => ({ content: 'mock' }), chatStream: async function*() {}, name: () => 'mock', modelName: () => 'test', healthCheck: async () => ({ status: 'ok', model: 'test', loaded: true }) } as any)))
     api.route('/', streamRoute)
   })
 

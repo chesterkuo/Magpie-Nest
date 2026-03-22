@@ -5,7 +5,6 @@ import { createFileRoute } from '../file'
 import { authMiddleware } from '../../middleware/auth'
 import { unlinkSync, writeFileSync, rmSync } from 'fs'
 
-const TEST_DB = '/tmp/magpie-route-file.db'
 const TEST_FILE_PATH = '/tmp/magpie-test-serve-file.txt'
 const TEST_PDF_PATH = '/tmp/magpie-test-serve-file.pdf'
 const AUTH = { Authorization: 'Bearer magpie-dev' }
@@ -30,7 +29,7 @@ describe('File API', () => {
   let app: Hono
 
   beforeEach(() => {
-    db = createDb(TEST_DB)
+    db = createDb(':memory:')
     app = new Hono()
     app.use('*', authMiddleware())
     app.route('/api', createFileRoute(db))
@@ -42,7 +41,6 @@ describe('File API', () => {
 
   afterEach(() => {
     db.close()
-    try { unlinkSync(TEST_DB) } catch {}
     try { unlinkSync(TEST_FILE_PATH) } catch {}
     try { unlinkSync(TEST_PDF_PATH) } catch {}
   })

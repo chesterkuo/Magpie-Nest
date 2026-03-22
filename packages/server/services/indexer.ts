@@ -1,6 +1,5 @@
 import { type MagpieDb } from './db'
 import { type VectorDb } from './lancedb'
-import { embed } from './embeddings'
 import { extractText, chunkText, detectFileType } from './extractor'
 import { generateThumb } from './thumbnail'
 import { extractMetadata } from './metadata'
@@ -15,7 +14,8 @@ const DATA_DIR = process.env.DATA_DIR || './data'
 export async function processFile(
   filePath: string,
   db: MagpieDb,
-  vectorDb: VectorDb
+  vectorDb: VectorDb,
+  embed: (texts: string[]) => Promise<number[][]>
 ): Promise<void> {
   const stat = statSync(filePath)
   const name = basename(filePath)

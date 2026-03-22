@@ -8,22 +8,22 @@ test.describe('Chat Page', () => {
 
   test('has chat input with placeholder', async ({ page }) => {
     await page.goto('/')
-    const input = page.locator('input[placeholder="Ask Magpie anything..."]')
+    const input = page.locator('textarea[placeholder="Ask Magpie anything..."]')
     await expect(input).toBeVisible()
     await expect(input).toBeEnabled()
   })
 
   test('has Send button that is disabled when input is empty', async ({ page }) => {
     await page.goto('/')
-    const sendBtn = page.locator('button', { hasText: 'Send' })
+    const sendBtn = page.locator('button[type="submit"]')
     await expect(sendBtn).toBeVisible()
     await expect(sendBtn).toBeDisabled()
   })
 
   test('enables Send button when text is entered', async ({ page }) => {
     await page.goto('/')
-    const input = page.locator('input[placeholder="Ask Magpie anything..."]')
-    const sendBtn = page.locator('button', { hasText: 'Send' })
+    const input = page.locator('textarea[placeholder="Ask Magpie anything..."]')
+    const sendBtn = page.locator('button[type="submit"]')
 
     await input.fill('hello')
     await expect(sendBtn).toBeEnabled()
@@ -40,7 +40,7 @@ test.describe('Chat Page', () => {
     })
 
     await page.goto('/')
-    const input = page.locator('input[placeholder="Ask Magpie anything..."]')
+    const input = page.locator('textarea[placeholder="Ask Magpie anything..."]')
     await input.fill('hello world')
     await input.press('Enter')
 
@@ -53,7 +53,7 @@ test.describe('Chat Page', () => {
     // VoiceInput component should render a mic button
     const form = page.locator('form')
     await expect(form).toBeVisible()
-    // The form has input + voice button + send button
+    // The form has textarea + voice button + send button
     const buttons = form.locator('button')
     await expect(buttons).toHaveCount(2) // voice + send
   })

@@ -3,9 +3,8 @@ import { Hono } from 'hono'
 import { createDb, type MagpieDb } from '../../services/db'
 import { createSettingsRoute } from '../settings'
 import { authMiddleware } from '../../middleware/auth'
-import { unlinkSync, mkdirSync, writeFileSync, rmSync } from 'fs'
+import { mkdirSync, writeFileSync, rmSync } from 'fs'
 
-const TEST_DB = '/tmp/magpie-route-settings.db'
 const AUTH = { Authorization: 'Bearer magpie-dev' }
 
 function jsonHeaders(extra: Record<string, string> = {}) {
@@ -18,20 +17,34 @@ describe('Settings API', () => {
   let watchDirs: string[]
 
   beforeEach(() => {
-    db = createDb(TEST_DB)
+    db = createDb(':memory:')
     watchDirs = ['/tmp/watch1']
     app = new Hono()
     app.use('*', authMiddleware())
+    const mockProviderManager = {
+      getLLMProvider: () => ({
+        healthCheck: async () => ({ status: 'ok', model: 'test', loaded: true }),
+        name: () => 'mock',
+        modelName: () => 'test',
+      }),
+      getEmbeddingProvider: () => ({
+        embedSingle: async () => [0, 1, 2],
+        name: () => 'mock',
+        modelName: () => 'test',
+        dimensions: () => 768,
+      }),
+      reload: () => {},
+    } as any
     app.route('/api', createSettingsRoute(
       db,
       () => watchDirs,
       (dirs: string[]) => { watchDirs = dirs },
+      mockProviderManager,
     ))
   })
 
   afterEach(() => {
     db.close()
-    try { unlinkSync(TEST_DB) } catch {}
   })
 
   it('requires auth (returns 401 without token)', async () => {
@@ -49,6 +62,10 @@ describe('Settings API', () => {
       expect(data.indexing).toBeDefined()
       expect(data.indexing.queueLength).toBeDefined()
       expect(data.indexing.totalIndexed).toBeDefined()
+      expect(data.llm).toBeDefined()
+      expect(data.llm.provider).toBeDefined()
+      expect(data.embedding).toBeDefined()
+      expect(data.embedding.provider).toBeDefined()
       expect(data.version).toBe('1.0.0')
     })
 

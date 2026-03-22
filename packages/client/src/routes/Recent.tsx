@@ -21,6 +21,16 @@ function groupByDate(files: FileItem[]) {
   return Object.entries(groups).filter(([, items]) => items.length > 0)
 }
 
+function SkeletonCards() {
+  return (
+    <div className="space-y-3">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="bg-gray-800 animate-pulse rounded-lg h-16" />
+      ))}
+    </div>
+  )
+}
+
 export function Recent() {
   const [files, setFiles] = useState<FileItem[]>([])
   const [total, setTotal] = useState(0)
@@ -46,23 +56,30 @@ export function Recent() {
   return (
     <div className="p-4 space-y-6">
       <h1 className="text-lg font-semibold">Recent Files</h1>
-      {groups.map(([label, items]) => (
-        <div key={label}>
-          <h2 className="text-sm text-gray-400 mb-2">{label}</h2>
-          <RenderBlock items={items} />
-        </div>
-      ))}
-      {files.length < total && (
-        <button
-          onClick={() => { const next = offset + limit; setOffset(next); loadFiles(next) }}
-          disabled={loading}
-          className="w-full py-2 text-sm text-gray-400 hover:text-white"
-        >
-          {loading ? 'Loading...' : 'Load more'}
-        </button>
-      )}
-      {!loading && files.length === 0 && (
-        <p className="text-gray-500 text-sm">No recent files found</p>
+
+      {loading && files.length === 0 ? (
+        <SkeletonCards />
+      ) : (
+        <>
+          {groups.map(([label, items]) => (
+            <div key={label} className="space-y-3">
+              <h2 className="text-xs font-medium text-gray-500 uppercase tracking-wider">{label}</h2>
+              <RenderBlock items={items} />
+            </div>
+          ))}
+          {!loading && files.length === 0 && (
+            <p className="text-gray-500 text-sm">No recent files found</p>
+          )}
+          {files.length < total && (
+            <button
+              onClick={() => { const next = offset + limit; setOffset(next); loadFiles(next) }}
+              disabled={loading}
+              className="w-full py-2 text-sm text-gray-400 hover:text-white transition-colors"
+            >
+              {loading ? 'Loading...' : 'Load more'}
+            </button>
+          )}
+        </>
       )}
     </div>
   )

@@ -1,6 +1,6 @@
 import { createDb, type MagpieDb } from './services/db'
 import { createVectorDb, type VectorDb } from './services/lancedb'
-import { embedSingle } from './services/embeddings'
+import { ProviderManager } from './services/providers/factory'
 import { initToolContext } from './agent/tools/registry'
 import { createWatcher } from './services/watcher'
 import { existsSync, mkdirSync } from 'fs'
@@ -13,6 +13,7 @@ const WATCH_DIRS = (process.env.WATCH_DIRS || '').split(',').filter(Boolean)
 export interface AppContext {
   db: MagpieDb
   vectorDb: VectorDb
+  providerManager: ProviderManager
   getWatchDirs: () => string[]
   setWatchDirs: (dirs: string[]) => void
 }
@@ -29,12 +30,13 @@ export async function bootstrap(): Promise<AppContext> {
 
   const db = createDb(SQLITE_PATH)
   const vectorDb = await createVectorDb(LANCEDB_PATH)
+  const providerManager = new ProviderManager(db)
 
   // Init tool context
   initToolContext({
     db,
     vectorDb,
-    embedQuery: embedSingle,
+    embedQuery: (text: string) => providerManager.getEmbeddingProvider().embedSingle(text),
     dataDir: DATA_DIR,
   })
 
@@ -58,6 +60,7 @@ export async function bootstrap(): Promise<AppContext> {
   return {
     db,
     vectorDb,
+    providerManager,
     getWatchDirs: () => currentWatchDirs,
     setWatchDirs: (dirs: string[]) => {
       if (currentWatcher) currentWatcher.close()
