@@ -5,6 +5,7 @@ import {
   MusicalNoteIcon,
   Cog6ToothIcon,
   ChatBubbleLeftIcon,
+  ArrowUpTrayIcon,
 } from '@heroicons/react/24/outline'
 
 const links = [
@@ -12,6 +13,7 @@ const links = [
   { to: '/conversations', icon: ChatBubbleLeftIcon, label: 'History' },
   { to: '/recent', icon: ClockIcon, label: 'Recent' },
   { to: '/media', icon: MusicalNoteIcon, label: 'Media' },
+  { to: '/upload', icon: ArrowUpTrayIcon, label: 'Upload' },
   { to: '/settings', icon: Cog6ToothIcon, label: 'Settings' },
 ]
 

@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router'
 import { Chat } from './routes/Chat'
 import { Recent } from './routes/Recent'
 import { Media } from './routes/Media'
+import { Upload } from './routes/Upload'
 import { Settings } from './routes/Settings'
 import { ConversationList } from './routes/ConversationList'
 import { PlaybackProvider } from './hooks/usePlayback'
@@ -32,6 +33,7 @@ export function App() {
               <Route path="/conversations" element={<ConversationList />} />
               <Route path="/recent" element={<Recent />} />
               <Route path="/media" element={<Media />} />
+              <Route path="/upload" element={<Upload />} />
               <Route path="/settings" element={<Settings />} />
             </Routes>
           </main>
