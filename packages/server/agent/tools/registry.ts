@@ -275,6 +275,38 @@ const toolImplementations: Record<string, (args: any) => Promise<any>> = {
 
     return { disk, fileStats }
   },
+
+  async airdrop_control(args: { action: 'status' | 'everyone' | 'contacts' | 'off' }) {
+    const modeMap: Record<string, string> = {
+      everyone: 'Everyone',
+      contacts: 'Contacts Only',
+      off: 'Off',
+    }
+
+    if (args.action === 'status') {
+      try {
+        const proc = Bun.spawnSync(['defaults', 'read', 'com.apple.sharingd', 'DiscoverableMode'])
+        const mode = new TextDecoder().decode(proc.stdout).trim()
+        return { mode: mode || 'Unknown', message: `AirDrop is currently set to: ${mode || 'Unknown'}` }
+      } catch {
+        return { mode: 'Unknown', message: 'Could not read AirDrop status.' }
+      }
+    }
+
+    const mode = modeMap[args.action]
+    if (!mode) return { error: 'Invalid action' }
+
+    try {
+      Bun.spawnSync(['defaults', 'write', 'com.apple.sharingd', 'DiscoverableMode', '-string', mode])
+      Bun.spawnSync(['killall', '-HUP', 'sharingd'])
+      const msg = args.action === 'off'
+        ? 'AirDrop has been turned off.'
+        : `AirDrop is now set to "${mode}". Files received via AirDrop will appear in ~/Downloads and be auto-indexed. Remember to turn it off when done.`
+      return { mode, message: msg }
+    } catch (err: any) {
+      return { error: `Failed to set AirDrop: ${err.message}` }
+    }
+  },
 }
 
 export function buildToolDefinitions() {
@@ -427,6 +459,24 @@ export function buildToolDefinitions() {
             dry_run: { type: 'boolean', description: 'If true, show preview without renaming (default: false)' },
           },
           required: ['path', 'pattern', 'replacement'],
+        },
+      },
+    },
+    {
+      type: 'function',
+      function: {
+        name: 'airdrop_control',
+        description: 'Control AirDrop discoverability on this Mac. Can enable (everyone/contacts only), disable, or check current status. When enabling for everyone, remind the user to turn it off when done.',
+        parameters: {
+          type: 'object',
+          properties: {
+            action: {
+              type: 'string',
+              enum: ['status', 'everyone', 'contacts', 'off'],
+              description: 'Get current status or set AirDrop mode',
+            },
+          },
+          required: ['action'],
         },
       },
     },
