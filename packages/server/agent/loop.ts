@@ -1,15 +1,12 @@
-import { Ollama } from 'ollama'
 import { SYSTEM_PROMPT } from './prompt'
 import { buildToolDefinitions, executeTool } from './tools/registry'
 import type { AgentChunk } from '@magpie/shared'
+import type { LLMProvider } from '../services/providers/types'
 
-const ollama = new Ollama({
-  host: process.env.OLLAMA_HOST || 'http://localhost:11434',
-})
-const MODEL = process.env.OLLAMA_MODEL || 'qwen3:8b'
 const MAX_ITERATIONS = 5
 
 export async function* runAgent(
+  llmProvider: LLMProvider,
   userMessage: string,
   history: Array<{ role: string; content: string }> = []
 ): AsyncGenerator<AgentChunk> {
@@ -21,15 +18,10 @@ export async function* runAgent(
   ]
 
   for (let i = 0; i < MAX_ITERATIONS; i++) {
-    const response = await ollama.chat({
-      model: MODEL,
-      messages,
-      tools,
-      stream: false,
-    })
+    const response = await llmProvider.chat({ messages, tools })
 
-    if (response.message.tool_calls?.length) {
-      for (const toolCall of response.message.tool_calls) {
+    if (response.tool_calls?.length) {
+      for (const toolCall of response.tool_calls) {
         yield { type: 'thinking', tool: toolCall.function.name }
 
         const result = await executeTool(
@@ -37,8 +29,8 @@ export async function* runAgent(
           toolCall.function.arguments
         )
 
-        messages.push(response.message)
-        messages.push({ role: 'tool', content: JSON.stringify(result) })
+        messages.push({ role: 'assistant', content: response.content || '', tool_calls: [toolCall] })
+        messages.push({ role: 'tool', content: JSON.stringify(result), tool_call_id: toolCall.id })
 
         if (result.files?.length) {
           yield { type: 'render', items: result.files }
@@ -48,15 +40,9 @@ export async function* runAgent(
     }
 
     // Final response — stream it
-    const finalStream = await ollama.chat({
-      model: MODEL,
-      messages,
-      stream: true,
-    })
-
-    for await (const chunk of finalStream) {
-      if (chunk.message.content) {
-        yield { type: 'text', content: chunk.message.content }
+    for await (const chunk of llmProvider.chatStream({ messages })) {
+      if (chunk.content) {
+        yield { type: 'text', content: chunk.content }
       }
     }
     break

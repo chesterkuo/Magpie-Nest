@@ -2,7 +2,8 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { authMiddleware } from './middleware/auth'
 import { createHealthRoute } from './routes/health'
-import { chatRoute } from './routes/chat'
+import { createChatRoute } from './routes/chat'
+import { createOllamaLLM } from './services/providers/ollama'
 import { streamRoute } from './routes/stream'
 import { thumbRoute } from './routes/thumb'
 import { createFileRoute } from './routes/file'
@@ -23,7 +24,10 @@ app.use('/api/*', authMiddleware())
 
 const api = app.basePath('/api')
 api.route('/', createHealthRoute(appContext.db, appContext.vectorDb, appContext.getWatchDirs))
-api.route('/', chatRoute)
+api.route('/', createChatRoute(() => createOllamaLLM({
+  host: process.env.OLLAMA_HOST || 'http://localhost:11434',
+  model: process.env.OLLAMA_MODEL || 'qwen3:4b',
+})))
 api.route('/', streamRoute)
 api.route('/', thumbRoute)
 api.route('/', createFileRoute(appContext.db))
@@ -44,5 +48,6 @@ app.get('*', async (c) => {
 
 export default {
   port: Number(process.env.PORT) || 8000,
+  idleTimeout: 120,
   fetch: app.fetch,
 }
