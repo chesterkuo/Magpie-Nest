@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import Hls from 'hls.js'
+import { PlayIcon } from '@heroicons/react/24/solid'
 import type { FileItem } from '@magpie/shared'
 
 function formatDuration(seconds: number): string {
@@ -32,19 +33,19 @@ export function VideoCard({ item }: { item: FileItem }) {
   return (
     <div className="bg-gray-800 rounded-lg overflow-hidden">
       {!playing ? (
-        <button onClick={handlePlay} className="w-full text-left p-3 flex items-center gap-3">
-          <div className="relative">
-            <img src={item.thumbUrl} alt="" className="w-24 h-16 object-cover rounded" />
+        <button onClick={handlePlay} className="w-full text-left">
+          <div className="aspect-video w-full rounded-lg overflow-hidden relative group">
+            <img src={item.thumbUrl} alt="" className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <PlayIcon className="w-12 h-12 text-white" />
+            </div>
             {item.duration != null && (
-              <span className="absolute bottom-0.5 right-0.5 bg-black/80 text-[10px] px-1 rounded">
+              <span className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-1.5 py-0.5 rounded">
                 {formatDuration(item.duration)}
               </span>
             )}
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{item.name}</p>
-          </div>
-          <span className="text-2xl">&#9654;</span>
+          <p className="text-sm font-medium mt-2 truncate px-1 pb-1">{item.name}</p>
         </button>
       ) : (
         <video ref={videoRef} controls className="w-full" />

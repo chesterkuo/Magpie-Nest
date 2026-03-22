@@ -1,4 +1,5 @@
 import { useEffect, useCallback } from 'react'
+import { XMarkIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import type { FileItem } from '@magpie/shared'
 
 interface Props {
@@ -24,21 +25,23 @@ export function ImageLightbox({ item, onClose, onPrev, onNext }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
+      className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
       onClick={onClose}
     >
       <button
-        className="absolute top-4 right-4 text-white text-2xl hover:text-gray-300"
+        className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors"
         onClick={onClose}
+        aria-label="Close"
       >
-        {'\u2715'}
+        <XMarkIcon className="w-8 h-8" />
       </button>
       {onPrev && (
         <button
-          className="absolute left-4 text-white text-3xl hover:text-gray-300"
+          className="absolute left-4 text-white hover:text-gray-300 transition-colors"
           onClick={(e) => { e.stopPropagation(); onPrev() }}
+          aria-label="Previous image"
         >
-          {'\u2039'}
+          <ChevronLeftIcon className="w-10 h-10" />
         </button>
       )}
       <img
@@ -49,10 +52,11 @@ export function ImageLightbox({ item, onClose, onPrev, onNext }: Props) {
       />
       {onNext && (
         <button
-          className="absolute right-4 text-white text-3xl hover:text-gray-300"
+          className="absolute right-4 text-white hover:text-gray-300 transition-colors"
           onClick={(e) => { e.stopPropagation(); onNext() }}
+          aria-label="Next image"
         >
-          {'\u203A'}
+          <ChevronRightIcon className="w-10 h-10" />
         </button>
       )}
       <p className="absolute bottom-4 text-white text-sm">{item.name}</p>

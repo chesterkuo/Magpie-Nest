@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router'
+import { PlusIcon } from '@heroicons/react/24/solid'
 import type { ConversationSummary } from '@magpie/shared'
 
 export function ConversationList() {
@@ -22,8 +23,9 @@ export function ConversationList() {
         <h1 className="text-lg font-semibold">Conversations</h1>
         <button
           onClick={() => navigate('/')}
-          className="px-3 py-1 bg-blue-600 rounded text-sm"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm font-medium transition-colors"
         >
+          <PlusIcon className="w-4 h-4" />
           New Chat
         </button>
       </div>
@@ -34,12 +36,14 @@ export function ConversationList() {
         <button
           key={c.id}
           onClick={() => navigate(`/chat/${c.id}`)}
-          className="w-full text-left p-3 rounded-lg bg-gray-800 hover:bg-gray-700 transition"
+          className="w-full text-left bg-gray-800 rounded-xl p-4 hover:bg-gray-700/50 transition-colors cursor-pointer"
         >
-          <p className="text-sm truncate">{c.preview || 'Empty conversation'}</p>
-          <p className="text-xs text-gray-500 mt-1">
-            {c.messageCount} messages · {new Date(c.updatedAt).toLocaleDateString()}
-          </p>
+          <p className="text-sm truncate text-white">{c.preview || 'Empty conversation'}</p>
+          <div className="flex items-center gap-2 mt-1.5">
+            <span className="text-xs text-gray-500">{c.messageCount} messages</span>
+            <span className="text-xs text-gray-600">·</span>
+            <span className="text-xs text-gray-500">{new Date(c.updatedAt).toLocaleDateString()}</span>
+          </div>
         </button>
       ))}
     </div>

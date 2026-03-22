@@ -21,7 +21,7 @@ export function DocViewer({ item }: { item: FileItem }) {
   }, [item.id])
 
   return (
-    <div className="bg-gray-800 rounded-lg p-3">
+    <div className="bg-gray-800 rounded-xl p-4">
       <div className="flex items-center justify-between mb-2">
         <p className="text-sm font-medium truncate">{item.name}</p>
         <div className="flex gap-2">
