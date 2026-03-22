@@ -18,14 +18,22 @@ export function VideoCard({ item }: { item: FileItem }) {
   function handlePlay() {
     const video = videoRef.current!
     if (!playing) {
+      const token = localStorage.getItem('magpie-token') || 'magpie-dev'
+      const hlsUrl = item.streamUrl + '/playlist.m3u8'
       if (Hls.isSupported()) {
-        const hls = new Hls()
-        hls.loadSource(item.streamUrl + '/playlist.m3u8')
+        const hls = new Hls({
+          xhrSetup: (xhr) => {
+            xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+          },
+        })
+        hls.loadSource(hlsUrl)
         hls.attachMedia(video)
+        hls.on(Hls.Events.MANIFEST_PARSED, () => video.play())
       } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = item.streamUrl + '/playlist.m3u8'
+        // Safari native HLS — can't set headers, but cookies work
+        video.src = hlsUrl
+        video.play()
       }
-      video.play()
       setPlaying(true)
     }
   }
