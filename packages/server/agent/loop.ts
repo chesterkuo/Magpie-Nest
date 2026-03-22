@@ -29,7 +29,18 @@ export async function* runAgent(
           toolCall.function.arguments
         )
 
-        messages.push({ role: 'assistant', content: response.content || '', tool_calls: [toolCall] })
+        messages.push({
+          role: 'assistant',
+          content: response.content || '',
+          tool_calls: [{
+            id: toolCall.id,
+            type: 'function' as const,
+            function: {
+              name: toolCall.function.name,
+              arguments: JSON.stringify(toolCall.function.arguments),
+            },
+          }],
+        })
         messages.push({ role: 'tool', content: JSON.stringify(result), tool_call_id: toolCall.id })
 
         if (result.files?.length) {
