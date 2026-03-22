@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "bun run --hot index.ts"
+    "dev": "bun run --hot --env-file=../../.env index.ts"
   },
   "dependencies": {
     "@lancedb/lancedb": "^0.26.2",
