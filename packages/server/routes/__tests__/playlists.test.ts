@@ -3,9 +3,6 @@ import { Hono } from 'hono'
 import { createDb, type MagpieDb } from '../../services/db'
 import { createPlaylistsRoute } from '../playlists'
 import { authMiddleware } from '../../middleware/auth'
-import { unlinkSync } from 'fs'
-
-const TEST_DB = '/tmp/magpie-route-playlists.db'
 const AUTH = { Authorization: 'Bearer magpie-dev' }
 
 function seedFile(db: MagpieDb, overrides: Partial<any> = {}) {
@@ -32,7 +29,7 @@ describe('Playlists API', () => {
   let app: Hono
 
   beforeEach(() => {
-    db = createDb(TEST_DB)
+    db = createDb(':memory:')
     app = new Hono()
     app.use('*', authMiddleware())
     app.route('/api', createPlaylistsRoute(db))
@@ -40,7 +37,6 @@ describe('Playlists API', () => {
 
   afterEach(() => {
     db.close()
-    try { unlinkSync(TEST_DB) } catch {}
   })
 
   it('requires auth (returns 401 without token)', async () => {

@@ -48,7 +48,7 @@ test.describe('Settings Page', () => {
 
   test('displays system status section', async ({ page }) => {
     await expect(page.locator('h2', { hasText: 'System Status' })).toBeVisible()
-    await expect(page.getByText('ok', { exact: false })).toBeVisible()
+    await expect(page.getByText('ok', { exact: true })).toBeVisible()
     await expect(page.getByText('qwen3:8b')).toBeVisible()
     await expect(page.getByText('Indexed: 42')).toBeVisible()
     await expect(page.getByText('Queue: 0')).toBeVisible()
