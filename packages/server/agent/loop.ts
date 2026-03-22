@@ -31,7 +31,7 @@ export async function* runAgent(
 
         messages.push({
           role: 'assistant',
-          content: response.content || '',
+          content: response.content || null,
           tool_calls: [{
             id: toolCall.id,
             type: 'function' as const,
@@ -41,7 +41,10 @@ export async function* runAgent(
             },
           }],
         })
-        messages.push({ role: 'tool', content: JSON.stringify(result), tool_call_id: toolCall.id })
+        // Truncate large tool results to avoid exceeding API limits
+        const resultStr = JSON.stringify(result)
+        const truncated = resultStr.length > 8000 ? resultStr.slice(0, 8000) + '... (truncated)' : resultStr
+        messages.push({ role: 'tool', content: truncated, tool_call_id: toolCall.id })
 
         if (result.files?.length) {
           yield { type: 'render', items: result.files }
