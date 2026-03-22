@@ -38,6 +38,7 @@ function toFileItem(record: any): FileItem {
 
 const toolImplementations: Record<string, (args: any) => Promise<any>> = {
   async search_files(args: { query: string; file_type?: string; days_ago?: number; limit?: number }) {
+    if (!args.query?.trim()) return { error: 'Search query cannot be empty', files: [] }
     const limit = args.limit || 10
     // Over-fetch 3x when filters applied to ensure enough results after filtering
     const fetchMultiplier = (args.file_type || args.days_ago) ? 3 : 1
