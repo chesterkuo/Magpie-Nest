@@ -6,6 +6,7 @@
     "dev": "bun run --filter '*' dev",
     "dev:server": "bun run --filter server dev",
     "dev:client": "bun run --filter client dev",
+    "dev:indexer": "bun run --filter server dev:indexer",
     "build": "bun run --filter client build"
   },
   "dependencies": {

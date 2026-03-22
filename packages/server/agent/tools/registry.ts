@@ -277,34 +277,25 @@ const toolImplementations: Record<string, (args: any) => Promise<any>> = {
   },
 
   async airdrop_control(args: { action: 'status' | 'everyone' | 'contacts' | 'off' }) {
-    const modeMap: Record<string, string> = {
-      everyone: 'Everyone',
-      contacts: 'Contacts Only',
-      off: 'Off',
-    }
-
     if (args.action === 'status') {
       try {
         const proc = Bun.spawnSync(['defaults', 'read', 'com.apple.sharingd', 'DiscoverableMode'])
         const mode = new TextDecoder().decode(proc.stdout).trim()
-        return { mode: mode || 'Unknown', message: `AirDrop is currently set to: ${mode || 'Unknown'}` }
+        return { mode: mode || 'Unknown', message: `AirDrop preference is set to: ${mode || 'Unknown'}. Note: On macOS 15+, AirDrop must be enabled through System Settings > General > AirDrop & Handoff.` }
       } catch {
         return { mode: 'Unknown', message: 'Could not read AirDrop status.' }
       }
     }
 
-    const mode = modeMap[args.action]
-    if (!mode) return { error: 'Invalid action' }
-
+    // Open AirDrop settings panel for the user
     try {
-      Bun.spawnSync(['defaults', 'write', 'com.apple.sharingd', 'DiscoverableMode', '-string', mode])
-      Bun.spawnSync(['killall', '-HUP', 'sharingd'])
-      const msg = args.action === 'off'
-        ? 'AirDrop has been turned off.'
-        : `AirDrop is now set to "${mode}". Files received via AirDrop will appear in ~/Downloads and be auto-indexed. Remember to turn it off when done.`
-      return { mode, message: msg }
+      Bun.spawnSync(['open', 'x-apple.systempreferences:com.apple.AirDrop-Handoff-Settings.extension'])
+      const instructions = args.action === 'off'
+        ? 'I\'ve opened AirDrop & Handoff settings. Please toggle AirDrop off.'
+        : `I've opened AirDrop & Handoff settings. Please set AirDrop to "${args.action === 'everyone' ? 'Everyone' : 'Contacts Only'}". Files received via AirDrop will appear in ~/Downloads and be auto-indexed. Remember to turn it off when done.`
+      return { action: args.action, message: instructions }
     } catch (err: any) {
-      return { error: `Failed to set AirDrop: ${err.message}` }
+      return { error: `Failed to open AirDrop settings: ${err.message}` }
     }
   },
 }
