@@ -27,9 +27,13 @@ export async function generateVideoThumb(
   seekSeconds = 10
 ): Promise<void> {
   ensureDir(outputPath)
+  // Extract frame as png first (ffmpeg may lack webp encoder), then convert with sharp
+  const tmpPng = outputPath.replace(/\.webp$/, '.tmp.png')
   await execAsync(
-    `ffmpeg -y -ss ${seekSeconds} -i "${inputPath}" -frames:v 1 -vf "scale=${width}:-1" "${outputPath}"`
+    `ffmpeg -y -ss ${seekSeconds} -i "${inputPath}" -frames:v 1 -update 1 -vf "scale=${width}:-1" "${tmpPng}"`
   )
+  await sharp(tmpPng).webp({ quality: 80 }).toFile(outputPath)
+  try { (await import('fs')).unlinkSync(tmpPng) } catch {}
 }
 
 export async function generateThumb(
