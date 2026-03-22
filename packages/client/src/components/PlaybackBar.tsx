@@ -1,3 +1,13 @@
+import { useState } from 'react'
+import {
+  ArrowsRightLeftIcon,
+  BackwardIcon,
+  PlayIcon,
+  PauseIcon,
+  ForwardIcon,
+  ArrowPathIcon,
+  SpeakerWaveIcon,
+} from '@heroicons/react/24/solid'
 import { usePlayback } from '../hooks/usePlayback'
 
 function formatTime(s: number) {
@@ -10,59 +20,125 @@ export function PlaybackBar() {
   const {
     currentTrack, isPlaying, progress, duration,
     togglePlay, next, prev, shuffled, loopMode,
-    toggleShuffle, cycleLoop, seek,
+    toggleShuffle, cycleLoop, seek, setVolume,
   } = usePlayback()
+
+  const [volume, setVolumeState] = useState(1)
 
   if (!currentTrack) return null
 
-  const pct = duration > 0 ? (progress / duration) * 100 : 0
-  const loopIcon = loopMode === 'one' ? '\u{1F502}' : loopMode === 'all' ? '\u{1F501}' : '\u27A1\uFE0F'
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const vol = parseFloat(e.target.value)
+    setVolumeState(vol)
+    setVolume(vol)
+  }
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    seek(parseFloat(e.target.value))
+  }
+
+  // repeat icon cycles: off -> all -> one
+  const repeatActive = loopMode !== 'off'
+  const repeatTitle = loopMode === 'one' ? 'Repeat one' : loopMode === 'all' ? 'Repeat all' : 'Repeat off'
 
   return (
-    <div className="border-t border-gray-800 bg-gray-900 px-3 py-2">
-      <div className="flex items-center gap-2">
-        <img src={currentTrack.thumbUrl} alt="" className="w-10 h-10 rounded object-cover bg-gray-700" />
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium truncate">{currentTrack.name}</p>
+    <div className="border-t border-gray-800 bg-gray-900 px-4 py-2">
+      <div className="flex items-center gap-3">
+
+        {/* Album Art */}
+        <img
+          src={currentTrack.thumbUrl}
+          alt=""
+          className="w-10 h-10 rounded-md shadow-lg object-cover bg-gray-700 flex-shrink-0"
+        />
+
+        {/* Track Info */}
+        <div className="min-w-0 w-28 flex-shrink-0">
+          <p className="text-xs font-medium truncate text-white">{currentTrack.name}</p>
           {currentTrack.artist && (
             <p className="text-[10px] text-gray-400 truncate">{currentTrack.artist}</p>
           )}
-          <div
-            className="w-full h-1 bg-gray-700 rounded mt-1 cursor-pointer"
-            onClick={(e) => {
-              const rect = e.currentTarget.getBoundingClientRect()
-              const ratio = (e.clientX - rect.left) / rect.width
-              seek(ratio * duration)
-            }}
-          >
-            <div className="h-1 bg-blue-500 rounded" style={{ width: `${pct}%` }} />
-          </div>
-          <div className="flex justify-between text-[10px] text-gray-500 mt-0.5">
-            <span>{formatTime(progress)}</span>
-            <span>{formatTime(duration)}</span>
-          </div>
         </div>
-        <div className="flex items-center gap-1.5">
+
+        {/* Controls */}
+        <div className="flex items-center gap-1 flex-shrink-0">
           <button
             onClick={toggleShuffle}
-            className={`text-xs ${shuffled ? 'text-blue-400' : 'text-gray-500'} hover:text-white`}
+            className={`p-1.5 rounded-full hover:bg-gray-700 transition-colors ${shuffled ? 'text-blue-500' : 'text-gray-400'}`}
             title="Shuffle"
           >
-            {'\u{1F500}'}
+            <ArrowsRightLeftIcon className="w-4 h-4" />
           </button>
-          <button onClick={prev} className="text-gray-400 hover:text-white text-sm">{'\u23EE'}</button>
-          <button onClick={togglePlay} className="text-white text-lg">
-            {isPlaying ? '\u23F8' : '\u25B6\uFE0F'}
+          <button
+            onClick={prev}
+            className="p-1.5 rounded-full hover:bg-gray-700 transition-colors text-gray-400 hover:text-white"
+            title="Previous"
+          >
+            <BackwardIcon className="w-4 h-4" />
           </button>
-          <button onClick={next} className="text-gray-400 hover:text-white text-sm">{'\u23ED'}</button>
+          <button
+            onClick={togglePlay}
+            className="p-1.5 rounded-full hover:bg-gray-700 transition-colors text-white"
+            title={isPlaying ? 'Pause' : 'Play'}
+          >
+            {isPlaying
+              ? <PauseIcon className="w-5 h-5" />
+              : <PlayIcon className="w-5 h-5" />
+            }
+          </button>
+          <button
+            onClick={next}
+            className="p-1.5 rounded-full hover:bg-gray-700 transition-colors text-gray-400 hover:text-white"
+            title="Next"
+          >
+            <ForwardIcon className="w-4 h-4" />
+          </button>
           <button
             onClick={cycleLoop}
-            className={`text-xs ${loopMode !== 'off' ? 'text-blue-400' : 'text-gray-500'} hover:text-white`}
-            title={`Loop: ${loopMode}`}
+            className={`relative p-1.5 rounded-full hover:bg-gray-700 transition-colors ${repeatActive ? 'text-blue-500' : 'text-gray-400'}`}
+            title={repeatTitle}
           >
-            {loopIcon}
+            <ArrowPathIcon className="w-4 h-4" />
+            {loopMode === 'one' && (
+              <span className="absolute bottom-0.5 right-0.5 text-[7px] font-bold leading-none">1</span>
+            )}
           </button>
         </div>
+
+        {/* Progress Bar + Time */}
+        <div className="flex-1 flex items-center gap-2 min-w-0">
+          <span className="text-[10px] text-gray-500 flex-shrink-0 w-7 text-right">
+            {formatTime(progress)}
+          </span>
+          <input
+            type="range"
+            min={0}
+            max={duration || 1}
+            step={0.1}
+            value={progress}
+            onChange={handleSeek}
+            className="flex-1 accent-blue-500 cursor-pointer h-1"
+            style={{ minWidth: 0 }}
+          />
+          <span className="text-[10px] text-gray-500 flex-shrink-0 w-7">
+            {formatTime(duration)}
+          </span>
+        </div>
+
+        {/* Volume (desktop only) */}
+        <div className="hidden md:flex items-center gap-1.5 flex-shrink-0">
+          <SpeakerWaveIcon className="w-4 h-4 text-gray-400" />
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.02}
+            value={volume}
+            onChange={handleVolumeChange}
+            className="w-20 accent-blue-500 cursor-pointer h-1"
+          />
+        </div>
+
       </div>
     </div>
   )
