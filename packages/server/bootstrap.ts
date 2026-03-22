@@ -1,6 +1,6 @@
 import { createDb, type MagpieDb } from './services/db'
 import { createVectorDb, type VectorDb } from './services/lancedb'
-import { embedSingle } from './services/embeddings'
+import { createOllamaEmbedding } from './services/providers/ollama'
 import { initToolContext } from './agent/tools/registry'
 import { createWatcher } from './services/watcher'
 import { existsSync, mkdirSync } from 'fs'
@@ -30,11 +30,18 @@ export async function bootstrap(): Promise<AppContext> {
   const db = createDb(SQLITE_PATH)
   const vectorDb = await createVectorDb(LANCEDB_PATH)
 
+  // Create embedding provider (will be replaced by ProviderManager in Task 9)
+  const embeddingProvider = createOllamaEmbedding({
+    host: process.env.OLLAMA_HOST || 'http://localhost:11434',
+    model: process.env.OLLAMA_EMBED_MODEL || 'nomic-embed-text',
+    dimensions: parseInt(process.env.EMBED_DIMENSIONS || '768'),
+  })
+
   // Init tool context
   initToolContext({
     db,
     vectorDb,
-    embedQuery: embedSingle,
+    embedQuery: (text: string) => embeddingProvider.embedSingle(text),
     dataDir: DATA_DIR,
   })
 
