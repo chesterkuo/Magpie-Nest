@@ -49,6 +49,10 @@ export interface MagpieDb {
   getConversation(id: string): { id: string; messages: string; created_at: string; updated_at: string } | null
   listConversations(limit: number): Array<{ id: string; preview: string; messageCount: number; updatedAt: string }>
   close(): void
+  // Settings
+  getSetting(key: string): string | null
+  setSetting(key: string, value: string): void
+  getAllSettings(): Record<string, string>
 }
 
 export function createDb(dbPath: string): MagpieDb {
@@ -107,6 +111,12 @@ export function createDb(dbPath: string): MagpieDb {
       updated_at  TEXT DEFAULT (datetime('now'))
     );
     CREATE INDEX IF NOT EXISTS idx_conversations_updated ON conversations(updated_at DESC);
+
+    CREATE TABLE IF NOT EXISTS settings (
+      key         TEXT PRIMARY KEY,
+      value       TEXT NOT NULL,
+      updated_at  TEXT DEFAULT (datetime('now'))
+    );
   `)
 
   const stmts = {
@@ -141,6 +151,11 @@ export function createDb(dbPath: string): MagpieDb {
     saveConversation: db.prepare(`INSERT INTO conversations (id, messages) VALUES (?, ?) ON CONFLICT(id) DO UPDATE SET messages = excluded.messages, updated_at = datetime('now')`),
     getConversation: db.prepare('SELECT * FROM conversations WHERE id = ?'),
     listConversations: db.prepare('SELECT id, messages, created_at, updated_at FROM conversations ORDER BY updated_at DESC LIMIT ?'),
+    // Settings statements
+    getSetting: db.prepare('SELECT value FROM settings WHERE key = ?'),
+    setSetting: db.prepare(`INSERT INTO settings (key, value) VALUES (?, ?)
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')`),
+    getAllSettings: db.prepare('SELECT key, value FROM settings'),
   }
 
   return {
@@ -289,6 +304,23 @@ export function createDb(dbPath: string): MagpieDb {
         } catch {}
         return { id: row.id, preview, messageCount, updatedAt: row.updated_at }
       })
+    },
+
+    // Settings methods
+    getSetting(key: string) {
+      const row = stmts.getSetting.get(key) as { value: string } | null
+      return row?.value ?? null
+    },
+
+    setSetting(key: string, value: string) {
+      stmts.setSetting.run(key, value)
+    },
+
+    getAllSettings() {
+      const rows = stmts.getAllSettings.all() as Array<{ key: string; value: string }>
+      const result: Record<string, string> = {}
+      for (const row of rows) result[row.key] = row.value
+      return result
     },
 
     close() {

@@ -2,18 +2,15 @@ import { describe, it, expect, beforeEach, afterEach } from 'bun:test'
 import { createDb, type MagpieDb } from '../db'
 import { unlinkSync } from 'fs'
 
-const TEST_DB = '/tmp/magpie-test.db'
-
 describe('MagpieDb', () => {
   let db: MagpieDb
 
   beforeEach(() => {
-    db = createDb(TEST_DB)
+    db = createDb(':memory:')
   })
 
   afterEach(() => {
     db.close()
-    try { unlinkSync(TEST_DB) } catch {}
   })
 
   it('creates tables on init', () => {
@@ -170,6 +167,31 @@ describe('MagpieDb', () => {
       const c3 = list.find(c => c.id === 'c-3')
       expect(c3).toBeDefined()
       expect(c3!.messageCount).toBe(2)
+    })
+  })
+
+  describe('settings', () => {
+    it('getSetting returns null for unknown key', () => {
+      expect(db.getSetting('nonexistent')).toBeNull()
+    })
+
+    it('setSetting and getSetting round-trip', () => {
+      db.setSetting('llm_provider', 'ollama')
+      expect(db.getSetting('llm_provider')).toBe('ollama')
+    })
+
+    it('setSetting overwrites existing value', () => {
+      db.setSetting('llm_model', 'v1')
+      db.setSetting('llm_model', 'v2')
+      expect(db.getSetting('llm_model')).toBe('v2')
+    })
+
+    it('getAllSettings returns all key-value pairs', () => {
+      db.setSetting('a', '1')
+      db.setSetting('b', '2')
+      const all = db.getAllSettings()
+      expect(all.a).toBe('1')
+      expect(all.b).toBe('2')
     })
   })
 
