@@ -11,14 +11,13 @@ function formatDuration(seconds: number): string {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
-export function VideoCard({ item }: { item: FileItem }) {
+export function VideoCard({ item, autoPlay }: { item: FileItem; autoPlay?: boolean }) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const hlsRef = useRef<Hls | null>(null)
-  const [playing, setPlaying] = useState(false)
+  const [playing, setPlaying] = useState(!!autoPlay)
 
   const hlsUrl = item.streamUrl + '/playlist.m3u8'
 
-  // When playing becomes true and video element is mounted, attach source
   useEffect(() => {
     if (!playing || !videoRef.current) return
     const video = videoRef.current
@@ -49,7 +48,7 @@ export function VideoCard({ item }: { item: FileItem }) {
         <button onClick={() => setPlaying(true)} className="w-full text-left">
           <div className="aspect-video w-full rounded-lg overflow-hidden relative group">
             <img src={item.thumbUrl} alt="" className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/40 md:opacity-0 md:group-hover:opacity-100 opacity-60 transition-opacity flex items-center justify-center">
               <PlayIcon className="w-12 h-12 text-white" />
             </div>
             {item.duration != null && (
