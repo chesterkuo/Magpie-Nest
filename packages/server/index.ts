@@ -3,7 +3,7 @@ import { cors } from 'hono/cors'
 import { authMiddleware } from './middleware/auth'
 import { createHealthRoute } from './routes/health'
 import { createChatRoute } from './routes/chat'
-import { streamRoute } from './routes/stream'
+import { createStreamRoute } from './routes/stream'
 import { thumbRoute } from './routes/thumb'
 import { createFileRoute } from './routes/file'
 import { createFilesRoute } from './routes/files'
@@ -25,7 +25,7 @@ app.use('/api/*', authMiddleware())
 const api = app.basePath('/api')
 api.route('/', createHealthRoute(appContext.db, appContext.vectorDb, appContext.getWatchDirs, appContext.providerManager))
 api.route('/', createChatRoute(() => appContext.providerManager.getLLMProvider()))
-api.route('/', streamRoute)
+api.route('/', createStreamRoute(appContext.db))
 api.route('/', thumbRoute)
 api.route('/', createFileRoute(appContext.db))
 api.route('/', createFilesRoute(appContext.db))

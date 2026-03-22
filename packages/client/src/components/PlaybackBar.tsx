@@ -43,7 +43,7 @@ export function PlaybackBar() {
 
   return (
     <div className="border-t border-gray-800 bg-gray-900 px-4 py-2">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 md:gap-3">
 
         {/* Album Art */}
         <img
@@ -53,7 +53,7 @@ export function PlaybackBar() {
         />
 
         {/* Track Info */}
-        <div className="min-w-0 w-28 flex-shrink-0">
+        <div className="min-w-0 w-20 md:w-28 flex-shrink-0">
           <p className="text-xs font-medium truncate text-white">{currentTrack.name}</p>
           {currentTrack.artist && (
             <p className="text-[10px] text-gray-400 truncate">{currentTrack.artist}</p>
@@ -64,7 +64,7 @@ export function PlaybackBar() {
         <div className="flex items-center gap-1 flex-shrink-0">
           <button
             onClick={toggleShuffle}
-            className={`p-1.5 rounded-full hover:bg-gray-700 transition-colors ${shuffled ? 'text-blue-500' : 'text-gray-400'}`}
+            className={`hidden md:block p-1.5 rounded-full hover:bg-gray-700 transition-colors ${shuffled ? 'text-blue-500' : 'text-gray-400'}`}
             title="Shuffle"
           >
             <ArrowsRightLeftIcon className="w-4 h-4" />
@@ -95,7 +95,7 @@ export function PlaybackBar() {
           </button>
           <button
             onClick={cycleLoop}
-            className={`relative p-1.5 rounded-full hover:bg-gray-700 transition-colors ${repeatActive ? 'text-blue-500' : 'text-gray-400'}`}
+            className={`hidden md:block relative p-1.5 rounded-full hover:bg-gray-700 transition-colors ${repeatActive ? 'text-blue-500' : 'text-gray-400'}`}
             title={repeatTitle}
           >
             <ArrowPathIcon className="w-4 h-4" />

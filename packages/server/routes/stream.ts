@@ -1,8 +1,8 @@
 import { Hono } from 'hono'
 import { existsSync } from 'fs'
 import { join, resolve, basename } from 'path'
-
-export const streamRoute = new Hono()
+import { ensureHls } from '../services/hls'
+import type { MagpieDb } from '../services/db'
 
 function getDataDir(): string {
   return process.env.DATA_DIR || './data'
@@ -15,7 +15,10 @@ function isSafeSegment(value: string): boolean {
   return true
 }
 
-streamRoute.get('/stream/:id/playlist.m3u8', async (c) => {
+export function createStreamRoute(db: MagpieDb) {
+  const route = new Hono()
+
+route.get('/stream/:id/playlist.m3u8', async (c) => {
   const { id } = c.req.param()
 
   if (!isSafeSegment(id)) {
@@ -26,8 +29,16 @@ streamRoute.get('/stream/:id/playlist.m3u8', async (c) => {
   const playlistPath = join(hlsCacheDir, id, 'playlist.m3u8')
   const resolved = resolve(playlistPath)
 
-  if (!resolved.startsWith(hlsCacheDir)) {
-    return c.json({ error: 'Invalid stream id' }, 400)
+  // If not cached, transcode on demand
+  if (!existsSync(resolved)) {
+    const file = db.getFileById(id)
+    if (!file) return c.json({ error: 'File not found' }, 404)
+    try {
+      await ensureHls(id, file.path, getDataDir())
+    } catch (err: any) {
+      console.error(`[stream] HLS transcode failed for ${id}:`, err.message)
+      return c.json({ error: 'Transcode failed' }, 500)
+    }
   }
 
   if (!existsSync(resolved)) {
@@ -41,7 +52,7 @@ streamRoute.get('/stream/:id/playlist.m3u8', async (c) => {
   })
 })
 
-streamRoute.get('/stream/:id/:segment', async (c) => {
+route.get('/stream/:id/:segment', async (c) => {
   const { id, segment } = c.req.param()
 
   if (!isSafeSegment(id)) {
@@ -72,3 +83,6 @@ streamRoute.get('/stream/:id/:segment', async (c) => {
     },
   })
 })
+
+  return route
+}
