@@ -1,30 +1,33 @@
 import { Hono } from 'hono'
 import type { MagpieDb } from '../services/db'
 import type { VectorDb } from '../services/lancedb'
+import type { ProviderManager } from '../services/providers/factory'
 
 const startTime = Date.now()
 
-export function createHealthRoute(db: MagpieDb, vectorDb: VectorDb, getWatchDirs: () => string[]) {
+export function createHealthRoute(db: MagpieDb, vectorDb: VectorDb, getWatchDirs: () => string[], providerManager?: ProviderManager) {
   const route = new Hono()
 
   route.get('/health', async (c) => {
-    const ollamaHost = process.env.OLLAMA_HOST || 'http://localhost:11434'
     const dataDir = process.env.DATA_DIR || './data'
 
-    // Check Ollama
-    let ollamaStatus: any = { status: 'error', model: '', loaded: false }
+    // Check LLM provider
+    let llmStatus: any = { status: 'error', model: '', loaded: false }
     try {
-      const res = await fetch(`${ollamaHost}/api/tags`, { signal: AbortSignal.timeout(3000) })
-      if (res.ok) {
-        const data = await res.json() as { models?: Array<{ name: string }> }
-        const model = process.env.OLLAMA_MODEL || 'qwen3:8b'
-        ollamaStatus = {
-          status: 'ok',
-          model,
-          loaded: data.models?.some(m => m.name.includes(model.split(':')[0])) ?? false,
-        }
-      }
+      llmStatus = await providerManager?.getLLMProvider().healthCheck()
+        ?? { status: 'error', model: '', loaded: false }
     } catch {}
+
+    // Check embedding provider (no healthCheck on EmbeddingProvider, report name/model)
+    let embedStatus: any = { status: 'ok', provider: '', model: '', dimensions: 0 }
+    try {
+      if (providerManager) {
+        const ep = providerManager.getEmbeddingProvider()
+        embedStatus = { status: 'ok', provider: ep.name(), model: ep.modelName(), dimensions: ep.dimensions() }
+      }
+    } catch {
+      embedStatus = { status: 'error', provider: '', model: '', dimensions: 0 }
+    }
 
     // Check SQLite
     let sqliteStatus: any = { status: 'error', totalFiles: 0 }
@@ -61,7 +64,7 @@ export function createHealthRoute(db: MagpieDb, vectorDb: VectorDb, getWatchDirs
       }
     } catch {}
 
-    const criticalOk = ollamaStatus.status === 'ok' && sqliteStatus.status === 'ok' && lanceStatus.status === 'ok'
+    const criticalOk = llmStatus.status === 'ok' && sqliteStatus.status === 'ok' && lanceStatus.status === 'ok'
     const voiceOk = whisperStatus.status === 'ok' && kokoroRunning
 
     // Disk usage
@@ -82,7 +85,8 @@ export function createHealthRoute(db: MagpieDb, vectorDb: VectorDb, getWatchDirs
     return c.json({
       status: criticalOk ? (voiceOk ? 'ok' : 'degraded') : 'error',
       services: {
-        ollama: ollamaStatus,
+        llm: llmStatus,
+        embedding: embedStatus,
         lancedb: lanceStatus,
         sqlite: sqliteStatus,
         whisper: whisperStatus,

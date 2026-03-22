@@ -3,7 +3,6 @@ import { cors } from 'hono/cors'
 import { authMiddleware } from './middleware/auth'
 import { createHealthRoute } from './routes/health'
 import { createChatRoute } from './routes/chat'
-import { createOllamaLLM } from './services/providers/ollama'
 import { streamRoute } from './routes/stream'
 import { thumbRoute } from './routes/thumb'
 import { createFileRoute } from './routes/file'
@@ -23,18 +22,15 @@ app.use('*', cors())
 app.use('/api/*', authMiddleware())
 
 const api = app.basePath('/api')
-api.route('/', createHealthRoute(appContext.db, appContext.vectorDb, appContext.getWatchDirs))
-api.route('/', createChatRoute(() => createOllamaLLM({
-  host: process.env.OLLAMA_HOST || 'http://localhost:11434',
-  model: process.env.OLLAMA_MODEL || 'qwen3:4b',
-})))
+api.route('/', createHealthRoute(appContext.db, appContext.vectorDb, appContext.getWatchDirs, appContext.providerManager))
+api.route('/', createChatRoute(() => appContext.providerManager.getLLMProvider()))
 api.route('/', streamRoute)
 api.route('/', thumbRoute)
 api.route('/', createFileRoute(appContext.db))
 api.route('/', createFilesRoute(appContext.db))
 api.route('/', createPlaylistsRoute(appContext.db))
 api.route('/', createConversationsRoute(appContext.db))
-api.route('/', createSettingsRoute(appContext.db, appContext.getWatchDirs, appContext.setWatchDirs))
+api.route('/', createSettingsRoute(appContext.db, appContext.getWatchDirs, appContext.setWatchDirs, appContext.providerManager))
 api.route('/', sttRoute)
 api.route('/', ttsRoute)
 
