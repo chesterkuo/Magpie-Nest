@@ -73,12 +73,13 @@ export function VoiceInput({ onTranscript, disabled }: Props) {
       onMouseUp={stopRecording}
       onTouchStart={startRecording}
       onTouchEnd={stopRecording}
-      className={`p-1.5 rounded-lg transition-colors ${
+      aria-label={recording ? 'Stop recording' : processing ? 'Processing...' : 'Record voice message'}
+      className={`p-2.5 rounded-lg transition-colors ${
         recording
-          ? 'ring-2 ring-rose-500 animate-pulse bg-rose-600 text-white'
+          ? 'ring-2 ring-red-500 bg-red-500 text-white animate-pulse'
           : processing
-          ? 'opacity-50 text-gray-400 cursor-not-allowed'
-          : 'text-gray-400 hover:text-white'
+          ? 'opacity-50 text-[#86868B] cursor-not-allowed'
+          : 'text-[#6E6E73] hover:text-[#1D1D1F] hover:bg-black/5'
       }`}
     >
       <MicrophoneIcon className="w-5 h-5" />

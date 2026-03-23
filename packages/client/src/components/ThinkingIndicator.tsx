@@ -2,7 +2,7 @@ import { Spinner } from './ui/Spinner'
 
 export function ThinkingIndicator({ tool }: { tool: string }) {
   return (
-    <div className="flex items-center gap-2 text-gray-400 text-sm py-1">
+    <div role="status" className="flex items-center gap-2 text-[#6E6E73] text-sm py-1">
       <Spinner className="w-4 h-4" />
       <span>{tool === 'thinking' ? 'Thinking...' : `Using ${tool}...`}</span>
     </div>

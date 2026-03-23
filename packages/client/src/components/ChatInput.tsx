@@ -44,8 +44,8 @@ export function ChatInput({ onSend, disabled }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="p-3 border-t border-gray-800 bg-gray-900">
-      <div className="flex items-end gap-2 border border-gray-700 rounded-xl bg-gray-800/50 focus-within:border-blue-500 transition-colors px-3 py-2">
+    <form onSubmit={handleSubmit} className="p-3 border-t border-[#D2D2D7] bg-[#F5F5F7]">
+      <div className="flex items-end gap-2 border border-[#D2D2D7] rounded-xl bg-white focus-within:border-[#007AFF] focus-within:ring-2 focus-within:ring-[#007AFF]/20 shadow-sm transition-all px-3 py-2">
         <textarea
           ref={textareaRef}
           rows={1}
@@ -55,14 +55,15 @@ export function ChatInput({ onSend, disabled }: Props) {
           onInput={handleInput}
           placeholder="Ask Magpie anything..."
           disabled={disabled}
-          className="flex-1 bg-transparent resize-none text-sm text-white placeholder-gray-500 outline-none leading-6 max-h-48 overflow-y-auto"
+          className="flex-1 bg-transparent resize-none text-sm text-[#1D1D1F] placeholder-[#86868B] outline-none leading-6 max-h-48 overflow-y-auto"
         />
         <div className="flex items-center gap-1 shrink-0">
           <VoiceInput onTranscript={handleTranscript} disabled={disabled} />
           <button
             type="submit"
             disabled={disabled || !text.trim()}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            aria-label="Send message"
+            className="p-2.5 rounded-lg text-[#007AFF] hover:bg-[#007AFF]/10 disabled:text-[#D2D2D7] disabled:cursor-not-allowed transition-colors"
           >
             <PaperAirplaneIcon className="w-5 h-5" />
           </button>
