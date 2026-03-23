@@ -24,12 +24,13 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false)
 
   return (
-    <aside className={`hidden md:flex flex-col bg-gray-900 border-r border-gray-800 transition-all duration-200 ${collapsed ? 'w-16' : 'w-60'}`}>
+    <aside className={`hidden md:flex flex-col bg-white/80 backdrop-blur-xl border-r border-[#D2D2D7] transition-all duration-200 ${collapsed ? 'w-16' : 'w-60'}`}>
       <div className={`flex items-center h-14 px-4 ${collapsed ? 'justify-center' : 'justify-between'}`}>
-        {!collapsed && <span className="text-lg font-semibold text-white">Magpie</span>}
+        {!collapsed && <span className="text-lg font-semibold text-[#1D1D1F]">Magpie</span>}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="p-1 text-gray-400 hover:text-white transition-colors"
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          className="p-1 text-[#6E6E73] hover:text-[#1D1D1F] transition-colors"
         >
           {collapsed
             ? <ChevronRightIcon className="w-5 h-5" />
@@ -47,8 +48,8 @@ export function Sidebar() {
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                 isActive
-                  ? 'bg-gray-800 text-white'
-                  : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
+                  ? 'bg-[#007AFF]/10 text-[#007AFF]'
+                  : 'text-[#6E6E73] hover:text-[#1D1D1F] hover:bg-black/5'
               } ${collapsed ? 'justify-center' : ''}`
             }
           >

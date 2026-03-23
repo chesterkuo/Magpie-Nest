@@ -19,15 +19,16 @@ const links = [
 
 export function BottomNav() {
   return (
-    <nav className="flex md:hidden border-t border-gray-800 bg-gray-900">
+    <nav className="flex md:hidden bg-white/90 backdrop-blur-xl border-t border-[#D2D2D7] pb-safe">
       {links.map(({ to, icon: Icon, label }) => (
         <NavLink
           key={to}
           to={to}
           end={to === '/'}
+          aria-label={label}
           className={({ isActive }) =>
-            `flex-1 flex flex-col items-center gap-0.5 py-2 text-xs transition-colors ${
-              isActive ? 'text-white' : 'text-gray-500'
+            `flex-1 flex flex-col items-center gap-0.5 py-3 text-xs transition-colors ${
+              isActive ? 'text-[#007AFF]' : 'text-[#86868B]'
             }`
           }
         >

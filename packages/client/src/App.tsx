@@ -21,7 +21,7 @@ export function App() {
 
         <div className="flex flex-col flex-1 min-w-0">
           {!online && (
-            <div className="bg-amber-900/50 text-amber-200 text-xs text-center py-1">
+            <div className="bg-amber-50 text-amber-800 border-b border-amber-200 text-xs text-center py-1">
               You're offline — viewing cached data
             </div>
           )}
