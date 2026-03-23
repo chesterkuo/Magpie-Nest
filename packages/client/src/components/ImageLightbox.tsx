@@ -25,19 +25,19 @@ export function ImageLightbox({ item, onClose, onPrev, onNext }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
+      className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
       onClick={onClose}
     >
       <button
-        className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors"
+        className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors p-3"
         onClick={onClose}
-        aria-label="Close"
+        aria-label="Close lightbox"
       >
         <XMarkIcon className="w-8 h-8" />
       </button>
       {onPrev && (
         <button
-          className="absolute left-4 text-white hover:text-gray-300 transition-colors"
+          className="absolute left-4 text-white hover:text-gray-300 transition-colors p-3"
           onClick={(e) => { e.stopPropagation(); onPrev() }}
           aria-label="Previous image"
         >
@@ -52,7 +52,7 @@ export function ImageLightbox({ item, onClose, onPrev, onNext }: Props) {
       />
       {onNext && (
         <button
-          className="absolute right-4 text-white hover:text-gray-300 transition-colors"
+          className="absolute right-4 text-white hover:text-gray-300 transition-colors p-3"
           onClick={(e) => { e.stopPropagation(); onNext() }}
           aria-label="Next image"
         >

@@ -7,13 +7,13 @@ export function ImageGrid({ items }: { items: FileItem[] }) {
 
   return (
     <>
-      <div className="grid grid-cols-3 gap-1.5 rounded-lg overflow-hidden">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-1.5">
         {items.map((item, i) => (
           <img
             key={item.id}
             src={item.thumbUrl}
             alt={item.name}
-            className="w-full aspect-square object-cover cursor-pointer hover:opacity-80 transition-opacity"
+            className="w-full aspect-square object-cover cursor-pointer hover:opacity-80 transition-opacity rounded-lg"
             onClick={() => setLightboxIndex(i)}
           />
         ))}

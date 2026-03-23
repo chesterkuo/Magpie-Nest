@@ -12,11 +12,11 @@ export function FileList({ items }: { items: FileItem[] }) {
   return (
     <div className="space-y-1">
       {items.map((item) => (
-        <div key={item.id} className="flex items-center gap-3 bg-gray-800 rounded-lg p-3 hover:bg-gray-700/50 transition-colors">
-          <DocumentIcon className="w-5 h-5 text-gray-400 flex-shrink-0" />
+        <div key={item.id} className="flex items-center gap-3 bg-white rounded-lg border border-[#E5E5EA] hover:bg-[#F5F5F7] transition-colors p-3">
+          <DocumentIcon className="w-5 h-5 text-[#007AFF] flex-shrink-0" />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{item.name}</p>
-            <p className="text-xs text-gray-400">
+            <p className="text-sm font-medium truncate text-[#1D1D1F]">{item.name}</p>
+            <p className="text-xs text-[#86868B]">
               {item.type} &middot; {formatSize(item.size)} &middot; {item.modified}
             </p>
           </div>

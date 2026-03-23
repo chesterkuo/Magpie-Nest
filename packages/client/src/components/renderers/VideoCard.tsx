@@ -43,21 +43,21 @@ export function VideoCard({ item, autoPlay }: { item: FileItem; autoPlay?: boole
   }, [playing, hlsUrl])
 
   return (
-    <div className="bg-gray-800 rounded-lg overflow-hidden">
+    <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-[#E5E5EA]">
       {!playing ? (
         <button onClick={() => setPlaying(true)} className="w-full text-left">
           <div className="aspect-video w-full rounded-lg overflow-hidden relative group">
             <img src={item.thumbUrl} alt="" className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-black/40 md:opacity-0 md:group-hover:opacity-100 opacity-60 transition-opacity flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/40 opacity-60 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex items-center justify-center">
               <PlayIcon className="w-12 h-12 text-white" />
             </div>
             {item.duration != null && (
-              <span className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-1.5 py-0.5 rounded">
+              <span className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
                 {formatDuration(item.duration)}
               </span>
             )}
           </div>
-          <p className="text-sm font-medium mt-2 truncate px-1 pb-1">{item.name}</p>
+          <p className="text-sm font-medium mt-2 truncate px-1 pb-1 text-[#1D1D1F]">{item.name}</p>
         </button>
       ) : (
         <video
