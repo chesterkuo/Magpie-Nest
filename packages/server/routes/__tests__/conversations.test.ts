@@ -107,4 +107,63 @@ describe('Conversations API', () => {
       expect(data.conversations.length).toBe(2)
     })
   })
+
+  describe('DELETE /api/conversations/:id', () => {
+    it('deletes an existing conversation', async () => {
+      await app.request('/api/conversations/del-test', {
+        method: 'PUT',
+        headers: { ...AUTH, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [{ role: 'user', text: 'hi' }] }),
+      })
+
+      const res = await app.request('/api/conversations/del-test', {
+        method: 'DELETE',
+        headers: AUTH,
+      })
+      expect(res.status).toBe(200)
+      const json = await res.json() as any
+      expect(json.ok).toBe(true)
+
+      const get = await app.request('/api/conversations/del-test', { headers: AUTH })
+      expect(get.status).toBe(404)
+    })
+
+    it('returns 404 for nonexistent conversation', async () => {
+      const res = await app.request('/api/conversations/nope', {
+        method: 'DELETE',
+        headers: AUTH,
+      })
+      expect(res.status).toBe(404)
+    })
+  })
+
+  describe('DELETE /api/conversations (batch)', () => {
+    it('deletes multiple conversations', async () => {
+      for (const id of ['batch-a', 'batch-b']) {
+        await app.request(`/api/conversations/${id}`, {
+          method: 'PUT',
+          headers: { ...AUTH, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: [{ role: 'user', text: 'hi' }] }),
+        })
+      }
+
+      const res = await app.request('/api/conversations', {
+        method: 'DELETE',
+        headers: { ...AUTH, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: ['batch-a', 'batch-b'] }),
+      })
+      expect(res.status).toBe(200)
+      const json = await res.json() as any
+      expect(json.deleted).toBe(2)
+    })
+
+    it('returns 400 when ids is empty', async () => {
+      const res = await app.request('/api/conversations', {
+        method: 'DELETE',
+        headers: { ...AUTH, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: [] }),
+      })
+      expect(res.status).toBe(400)
+    })
+  })
 })

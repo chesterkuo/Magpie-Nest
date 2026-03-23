@@ -30,5 +30,19 @@ export function createConversationsRoute(db: MagpieDb) {
     })
   })
 
+  route.delete('/conversations/:id', (c) => {
+    const { id } = c.req.param()
+    const deleted = db.deleteConversation(id)
+    if (!deleted) return c.json({ error: 'Conversation not found' }, 404)
+    return c.json({ ok: true })
+  })
+
+  route.delete('/conversations', async (c) => {
+    const { ids } = await c.req.json<{ ids: string[] }>()
+    if (!ids?.length) return c.json({ error: 'ids array is required' }, 400)
+    const deleted = db.deleteConversations(ids)
+    return c.json({ deleted })
+  })
+
   return route
 }
