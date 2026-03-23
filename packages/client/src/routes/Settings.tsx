@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 
 const TOKEN = () => localStorage.getItem('magpie-token') || 'magpie-dev'
@@ -72,6 +73,7 @@ function ProviderCard({
   onChange: (field: string, value: string) => void
   onSave: () => Promise<void>
 }) {
+  const { t } = useTranslation()
   const [showKey, setShowKey] = useState(false)
   const [testing, setTesting] = useState(false)
   const [testResult, setTestResult] = useState<{ status: string; message?: string } | null>(null)
@@ -105,7 +107,7 @@ function ProviderCard({
 
       {/* Provider */}
       <div className="space-y-1">
-        <label className="text-sm text-[#6E6E73]">Provider</label>
+        <label className="text-sm text-[#6E6E73]">{t('settings.provider')}</label>
         <select
           value={config.provider}
           onChange={(e) => onChange('provider', e.target.value)}
@@ -119,7 +121,7 @@ function ProviderCard({
       {/* API Key (only for openai-compatible) */}
       {!isOllama && (
         <div className="space-y-1">
-          <label className="text-sm text-[#6E6E73]">API Key</label>
+          <label className="text-sm text-[#6E6E73]">{t('settings.apiKey')}</label>
           <div className="relative">
             <input
               type={showKey ? 'text' : 'password'}
@@ -147,7 +149,7 @@ function ProviderCard({
       {/* Base URL / Ollama Host */}
       <div className="space-y-1">
         <label className="text-sm text-[#6E6E73]">
-          {isOllama ? 'Ollama Host' : 'Base URL'}
+          {isOllama ? t('settings.ollamaHost') : t('settings.baseUrl')}
         </label>
         <input
           type="text"
@@ -160,7 +162,7 @@ function ProviderCard({
 
       {/* Model */}
       <div className="space-y-1">
-        <label className="text-sm text-[#6E6E73]">Model</label>
+        <label className="text-sm text-[#6E6E73]">{t('settings.model')}</label>
         <input
           type="text"
           value={config.model}
@@ -173,7 +175,7 @@ function ProviderCard({
       {/* Dimensions (embedding only) */}
       {type === 'embedding' && 'dimensions' in config && (
         <div className="space-y-1">
-          <label className="text-sm text-[#6E6E73]">Dimensions</label>
+          <label className="text-sm text-[#6E6E73]">{t('settings.dimensions')}</label>
           <input
             type="number"
             value={(config as EmbedConfig).dimensions}
@@ -190,14 +192,14 @@ function ProviderCard({
           onClick={onSave}
           className="bg-[#007AFF] hover:bg-[#0056CC] px-3 py-1.5 rounded-lg text-sm text-white transition-colors"
         >
-          Save
+          {t('settings.save')}
         </button>
         <button
           onClick={testConnection}
           disabled={testing}
           className="bg-[#34C759] hover:bg-[#2DB84E] disabled:opacity-50 px-3 py-1.5 rounded-lg text-sm text-white transition-colors"
         >
-          {testing ? 'Testing...' : 'Test Connection'}
+          {testing ? '...' : t('settings.testConnection')}
         </button>
         {testResult && (
           <span className={`text-sm ${testResult.status === 'ok' ? 'text-[#34C759]' : 'text-[#FF3B30]'}`}>
@@ -210,6 +212,7 @@ function ProviderCard({
 }
 
 export function Settings() {
+  const { t, i18n } = useTranslation()
   const [health, setHealth] = useState<HealthData | null>(null)
   const [settings, setSettings] = useState<SettingsData | null>(null)
   const [newDir, setNewDir] = useState('')
@@ -282,15 +285,18 @@ export function Settings() {
     }))
   }
 
+  const inputClass =
+    'w-full bg-[#F5F5F7] border border-[#D2D2D7] rounded-lg px-3 py-2.5 text-sm text-[#1D1D1F] focus:border-[#007AFF] focus:ring-2 focus:ring-[#007AFF]/20 focus:outline-none'
+
   const svc = health?.services || {}
 
   return (
     <div className="p-4 space-y-4 max-w-2xl mx-auto pb-24">
-      <h1 className="text-lg font-semibold text-[#1D1D1F]">Settings</h1>
+      <h1 className="text-lg font-semibold text-[#1D1D1F]">{t('settings.title')}</h1>
 
       {/* System Status */}
       <section className="bg-white shadow-sm border border-[#E5E5EA] rounded-xl p-4 space-y-3">
-        <h2 className="text-base font-semibold text-[#1D1D1F]">System Status</h2>
+        <h2 className="text-base font-semibold text-[#1D1D1F]">{t('settings.systemStatus')}</h2>
         <div className="grid grid-cols-2 gap-2 text-sm">
           <div className="flex items-center gap-2">
             <StatusDot ok={svc.llm?.status === 'ok'} />
@@ -324,14 +330,14 @@ export function Settings() {
         <div className="flex items-center gap-4 text-xs text-[#86868B] pt-1 border-t border-[#E5E5EA]">
           <span>Status: <span className={health?.status === 'ok' ? 'text-[#34C759]' : health?.status === 'degraded' ? 'text-yellow-500' : 'text-[#FF3B30]'}>{health?.status || '...'}</span></span>
           <span>Uptime: {health?.uptime ? `${Math.floor(health.uptime / 60)}m` : '...'}</span>
-          <span>Indexed: {settings?.indexing?.totalIndexed ?? '...'}</span>
-          <span>Queue: {settings?.indexing?.queueLength ?? 0}</span>
+          <span>{t('settings.indexed', { count: settings?.indexing?.totalIndexed ?? '...' })}</span>
+          <span>{t('settings.queue', { count: settings?.indexing?.queueLength ?? 0 })}</span>
         </div>
       </section>
 
       {/* Chat Model */}
       <ProviderCard
-        title="Chat Model"
+        title={t('settings.chatModel')}
         type="llm"
         config={llm}
         onChange={updateLlm}
@@ -340,7 +346,7 @@ export function Settings() {
 
       {/* Embedding Model */}
       <ProviderCard
-        title="Embedding Model"
+        title={t('settings.embeddingModel')}
         type="embedding"
         config={embed}
         onChange={updateEmbed}
@@ -349,13 +355,13 @@ export function Settings() {
 
       {/* Watch Directories */}
       <section className="bg-white shadow-sm border border-[#E5E5EA] rounded-xl p-4 space-y-3">
-        <h2 className="text-base font-semibold text-[#1D1D1F]">Watch Directories</h2>
+        <h2 className="text-base font-semibold text-[#1D1D1F]">{t('settings.watchDirs')}</h2>
         <div className="space-y-2">
           {settings?.watchDirs.map(dir => (
             <div key={dir} className="flex items-center gap-2 bg-[#F5F5F7] border border-[#E5E5EA] rounded-lg px-3 py-2">
               <span className="flex-1 text-sm text-[#1D1D1F] truncate">{dir}</span>
-              <button onClick={() => triggerIndex(dir)} className="text-xs bg-[#F5F5F7] text-[#1D1D1F] border border-[#D2D2D7] hover:bg-[#E5E5EA] px-2 py-1 rounded transition-colors">Re-index</button>
-              <button onClick={() => removeDir(dir)} className="text-xs text-[#FF3B30] hover:text-[#CC2F26] transition-colors">Remove</button>
+              <button onClick={() => triggerIndex(dir)} className="text-xs bg-[#F5F5F7] text-[#1D1D1F] border border-[#D2D2D7] hover:bg-[#E5E5EA] px-2 py-1 rounded transition-colors">{t('settings.reindex')}</button>
+              <button onClick={() => removeDir(dir)} className="text-xs text-[#FF3B30] hover:text-[#CC2F26] transition-colors">{t('settings.remove')}</button>
             </div>
           ))}
           <div className="flex gap-2">
@@ -367,23 +373,47 @@ export function Settings() {
               placeholder="/path/to/watch"
               className="flex-1 bg-[#F5F5F7] border border-[#D2D2D7] rounded-lg px-3 py-2.5 text-sm text-[#1D1D1F] placeholder-[#86868B] focus:border-[#007AFF] focus:ring-2 focus:ring-[#007AFF]/20 focus:outline-none"
             />
-            <button onClick={addDir} className="px-3 py-2 bg-[#007AFF] hover:bg-[#0056CC] rounded-lg text-sm text-white transition-colors">Add</button>
+            <button onClick={addDir} className="px-3 py-2 bg-[#007AFF] hover:bg-[#0056CC] rounded-lg text-sm text-white transition-colors">{t('settings.add')}</button>
           </div>
         </div>
       </section>
 
       {/* Voice */}
       <section className="bg-white shadow-sm border border-[#E5E5EA] rounded-xl p-4 space-y-3">
-        <h2 className="text-base font-semibold text-[#1D1D1F]">Voice</h2>
+        <h2 className="text-base font-semibold text-[#1D1D1F]">{t('settings.voice')}</h2>
         <div className="flex items-center justify-between">
-          <span className="text-sm text-[#6E6E73]">Read responses aloud</span>
+          <span className="text-sm text-[#6E6E73]">{t('settings.readAloud')}</span>
           <ToggleSwitch enabled={readAloud} onToggle={toggleTts} />
         </div>
       </section>
 
+      {/* Language */}
+      <div className="bg-white shadow-sm border border-[#E5E5EA] rounded-xl p-4 space-y-3">
+        <h2 className="text-base font-semibold text-[#1D1D1F]">{t('settings.language')}</h2>
+        <select
+          value={i18n.language}
+          onChange={(e) => {
+            i18n.changeLanguage(e.target.value)
+            localStorage.setItem('magpie-lang', e.target.value)
+          }}
+          className={inputClass}
+        >
+          <option value="en">English</option>
+          <option value="zh-TW">繁體中文</option>
+          <option value="zh-CN">简体中文</option>
+          <option value="fr">Français</option>
+          <option value="es">Español</option>
+          <option value="ja">日本語</option>
+          <option value="ko">한국어</option>
+          <option value="th">ไทย</option>
+          <option value="nl">Nederlands</option>
+          <option value="id">Bahasa Indonesia</option>
+        </select>
+      </div>
+
       {/* About */}
       <section className="bg-white shadow-sm border border-[#E5E5EA] rounded-xl p-4 space-y-3">
-        <h2 className="text-base font-semibold text-[#1D1D1F]">About</h2>
+        <h2 className="text-base font-semibold text-[#1D1D1F]">{t('settings.about')}</h2>
         <div className="text-sm text-[#6E6E73] space-y-1">
           <p>Magpie v{settings?.version || '1.0.0'}</p>
           <p>Plusblocks Technology Ltd.</p>
