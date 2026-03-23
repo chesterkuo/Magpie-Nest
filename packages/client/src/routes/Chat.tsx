@@ -17,7 +17,7 @@ export function Chat() {
     <div className="flex flex-col h-full md:p-6 p-4">
       <div className="flex-1 overflow-y-auto">
         {messages.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-gray-500">
+          <div className="flex items-center justify-center h-full text-[#6E6E73]">
             <p className="text-lg">Ask Magpie to find your files</p>
           </div>
         ) : (
