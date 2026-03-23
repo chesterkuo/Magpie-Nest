@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { PaperAirplaneIcon } from '@heroicons/react/24/solid'
 import { VoiceInput } from './VoiceInput'
 
@@ -8,6 +9,7 @@ interface Props {
 }
 
 export function ChatInput({ onSend, disabled }: Props) {
+  const { t } = useTranslation()
   const [text, setText] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -53,7 +55,7 @@ export function ChatInput({ onSend, disabled }: Props) {
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
           onInput={handleInput}
-          placeholder="Ask Magpie anything..."
+          placeholder={t('chat.placeholder')}
           disabled={disabled}
           className="flex-1 bg-transparent resize-none text-sm text-[#1D1D1F] placeholder-[#86868B] outline-none leading-6 max-h-48 overflow-y-auto"
         />
@@ -62,7 +64,7 @@ export function ChatInput({ onSend, disabled }: Props) {
           <button
             type="submit"
             disabled={disabled || !text.trim()}
-            aria-label="Send message"
+            aria-label={t('chat.send')}
             className="p-2.5 rounded-lg text-[#007AFF] hover:bg-[#007AFF]/10 disabled:text-[#D2D2D7] disabled:cursor-not-allowed transition-colors"
           >
             <PaperAirplaneIcon className="w-5 h-5" />

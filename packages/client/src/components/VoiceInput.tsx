@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { MicrophoneIcon } from '@heroicons/react/24/solid'
 
 interface Props {
@@ -7,6 +8,7 @@ interface Props {
 }
 
 export function VoiceInput({ onTranscript, disabled }: Props) {
+  const { t } = useTranslation()
   const [recording, setRecording] = useState(false)
   const [processing, setProcessing] = useState(false)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
@@ -73,7 +75,7 @@ export function VoiceInput({ onTranscript, disabled }: Props) {
       onMouseUp={stopRecording}
       onTouchStart={startRecording}
       onTouchEnd={stopRecording}
-      aria-label={recording ? 'Stop recording' : processing ? 'Processing...' : 'Record voice message'}
+      aria-label={recording ? t('chat.voiceStop') : processing ? t('chat.voiceProcessing') : t('chat.voiceRecord')}
       className={`p-2.5 rounded-lg transition-colors ${
         recording
           ? 'ring-2 ring-red-500 bg-red-500 text-white animate-pulse'

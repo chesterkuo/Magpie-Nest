@@ -1,10 +1,12 @@
 import { useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useParams } from 'react-router'
 import { useSSE } from '../hooks/useSSE'
 import { ChatInput } from '../components/ChatInput'
 import { MessageList } from '../components/MessageList'
 
 export function Chat() {
+  const { t } = useTranslation()
   const { conversationId } = useParams<{ conversationId?: string }>()
   const { messages, isLoading, sendMessage } = useSSE(conversationId)
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -18,7 +20,7 @@ export function Chat() {
       <div className="flex-1 overflow-y-auto">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full text-[#6E6E73]">
-            <p className="text-lg">Ask Magpie to find your files</p>
+            <p className="text-lg">{t('chat.emptyState')}</p>
           </div>
         ) : (
           <MessageList messages={messages} />
