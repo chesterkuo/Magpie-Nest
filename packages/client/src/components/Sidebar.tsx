@@ -10,18 +10,20 @@ import {
   ArrowUpTrayIcon,
 } from '@heroicons/react/24/outline'
 import { useState } from 'react'
-
-const links = [
-  { to: '/', icon: ChatBubbleLeftRightIcon, label: 'Chat' },
-  { to: '/conversations', icon: ChatBubbleLeftIcon, label: 'History' },
-  { to: '/recent', icon: ClockIcon, label: 'Recent' },
-  { to: '/media', icon: MusicalNoteIcon, label: 'Media' },
-  { to: '/upload', icon: ArrowUpTrayIcon, label: 'Upload' },
-  { to: '/settings', icon: Cog6ToothIcon, label: 'Settings' },
-]
+import { useTranslation } from 'react-i18next'
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false)
+  const { t } = useTranslation()
+
+  const links = [
+    { to: '/', icon: ChatBubbleLeftRightIcon, label: t('nav.chat') },
+    { to: '/conversations', icon: ChatBubbleLeftIcon, label: t('nav.history') },
+    { to: '/recent', icon: ClockIcon, label: t('nav.recent') },
+    { to: '/media', icon: MusicalNoteIcon, label: t('nav.media') },
+    { to: '/upload', icon: ArrowUpTrayIcon, label: t('nav.upload') },
+    { to: '/settings', icon: Cog6ToothIcon, label: t('nav.settings') },
+  ]
 
   return (
     <aside className={`hidden md:flex flex-col bg-white/80 backdrop-blur-xl border-r border-[#D2D2D7] transition-all duration-200 ${collapsed ? 'w-16' : 'w-60'}`}>
@@ -29,7 +31,7 @@ export function Sidebar() {
         {!collapsed && <span className="text-lg font-semibold text-[#1D1D1F]">Magpie</span>}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-label={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
           className="p-1 text-[#6E6E73] hover:text-[#1D1D1F] transition-colors"
         >
           {collapsed

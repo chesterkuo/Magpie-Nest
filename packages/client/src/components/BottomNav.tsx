@@ -7,17 +7,20 @@ import {
   ChatBubbleLeftIcon,
   ArrowUpTrayIcon,
 } from '@heroicons/react/24/outline'
-
-const links = [
-  { to: '/', icon: ChatBubbleLeftRightIcon, label: 'Chat' },
-  { to: '/conversations', icon: ChatBubbleLeftIcon, label: 'History' },
-  { to: '/recent', icon: ClockIcon, label: 'Recent' },
-  { to: '/media', icon: MusicalNoteIcon, label: 'Media' },
-  { to: '/upload', icon: ArrowUpTrayIcon, label: 'Upload' },
-  { to: '/settings', icon: Cog6ToothIcon, label: 'Settings' },
-]
+import { useTranslation } from 'react-i18next'
 
 export function BottomNav() {
+  const { t } = useTranslation()
+
+  const links = [
+    { to: '/', icon: ChatBubbleLeftRightIcon, label: t('nav.chat') },
+    { to: '/conversations', icon: ChatBubbleLeftIcon, label: t('nav.history') },
+    { to: '/recent', icon: ClockIcon, label: t('nav.recent') },
+    { to: '/media', icon: MusicalNoteIcon, label: t('nav.media') },
+    { to: '/upload', icon: ArrowUpTrayIcon, label: t('nav.upload') },
+    { to: '/settings', icon: Cog6ToothIcon, label: t('nav.settings') },
+  ]
+
   return (
     <nav className="flex md:hidden bg-white/90 backdrop-blur-xl border-t border-[#D2D2D7] pb-safe">
       {links.map(({ to, icon: Icon, label }) => (

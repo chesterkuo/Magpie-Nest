@@ -10,9 +10,11 @@ import { PlaybackBar } from './components/PlaybackBar'
 import { Sidebar } from './components/Sidebar'
 import { BottomNav } from './components/BottomNav'
 import { useOnlineStatus } from './hooks/useOnlineStatus'
+import { useTranslation } from 'react-i18next'
 
 export function App() {
   const online = useOnlineStatus()
+  const { t } = useTranslation()
 
   return (
     <PlaybackProvider>
@@ -22,7 +24,7 @@ export function App() {
         <div className="flex flex-col flex-1 min-w-0">
           {!online && (
             <div className="bg-amber-50 text-amber-800 border-b border-amber-200 text-xs text-center py-1">
-              You're offline — viewing cached data
+              {t('common.offline')}
             </div>
           )}
 
