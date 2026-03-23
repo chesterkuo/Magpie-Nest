@@ -170,6 +170,35 @@ describe('MagpieDb', () => {
     })
   })
 
+  describe('conversation delete', () => {
+    it('deleteConversation removes a conversation', () => {
+      db.saveConversation('del-1', JSON.stringify([{ role: 'user', text: 'hello' }]))
+      expect(db.getConversation('del-1')).not.toBeNull()
+      const deleted = db.deleteConversation('del-1')
+      expect(deleted).toBe(true)
+      expect(db.getConversation('del-1')).toBeNull()
+    })
+
+    it('deleteConversation returns false for nonexistent id', () => {
+      expect(db.deleteConversation('nonexistent')).toBe(false)
+    })
+
+    it('deleteConversations batch deletes multiple', () => {
+      db.saveConversation('batch-1', JSON.stringify([]))
+      db.saveConversation('batch-2', JSON.stringify([]))
+      db.saveConversation('batch-3', JSON.stringify([]))
+      const count = db.deleteConversations(['batch-1', 'batch-3'])
+      expect(count).toBe(2)
+      expect(db.getConversation('batch-1')).toBeNull()
+      expect(db.getConversation('batch-2')).not.toBeNull()
+      expect(db.getConversation('batch-3')).toBeNull()
+    })
+
+    it('deleteConversations returns 0 for empty array', () => {
+      expect(db.deleteConversations([])).toBe(0)
+    })
+  })
+
   describe('settings', () => {
     it('getSetting returns null for unknown key', () => {
       expect(db.getSetting('nonexistent')).toBeNull()

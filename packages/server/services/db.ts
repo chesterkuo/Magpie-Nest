@@ -48,6 +48,8 @@ export interface MagpieDb {
   saveConversation(id: string, messagesJson: string): void
   getConversation(id: string): { id: string; messages: string; created_at: string; updated_at: string } | null
   listConversations(limit: number): Array<{ id: string; preview: string; messageCount: number; updatedAt: string }>
+  deleteConversation(id: string): boolean
+  deleteConversations(ids: string[]): number
   close(): void
   // Settings
   getSetting(key: string): string | null
@@ -151,6 +153,7 @@ export function createDb(dbPath: string): MagpieDb {
     saveConversation: db.prepare(`INSERT INTO conversations (id, messages) VALUES (?, ?) ON CONFLICT(id) DO UPDATE SET messages = excluded.messages, updated_at = datetime('now')`),
     getConversation: db.prepare('SELECT * FROM conversations WHERE id = ?'),
     listConversations: db.prepare('SELECT id, messages, created_at, updated_at FROM conversations ORDER BY updated_at DESC LIMIT ?'),
+    deleteConversation: db.prepare('DELETE FROM conversations WHERE id = ?'),
     // Settings statements
     getSetting: db.prepare('SELECT value FROM settings WHERE key = ?'),
     setSetting: db.prepare(`INSERT INTO settings (key, value) VALUES (?, ?)
@@ -286,6 +289,19 @@ export function createDb(dbPath: string): MagpieDb {
 
     getConversation(id: string) {
       return (stmts.getConversation.get(id) as { id: string; messages: string; created_at: string; updated_at: string }) ?? null
+    },
+
+    deleteConversation(id: string) {
+      const result = stmts.deleteConversation.run(id)
+      return result.changes > 0
+    },
+
+    deleteConversations(ids: string[]) {
+      if (ids.length === 0) return 0
+      const placeholders = ids.map(() => '?').join(',')
+      const stmt = db.prepare(`DELETE FROM conversations WHERE id IN (${placeholders})`)
+      const result = stmt.run(...ids)
+      return result.changes
     },
 
     listConversations(limit: number) {
