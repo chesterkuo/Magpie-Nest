@@ -27,7 +27,7 @@ test.describe('Media Page', () => {
 
   test('Videos tab is active by default', async ({ page }) => {
     const videosTab = page.locator('button', { hasText: 'Videos' })
-    await expect(videosTab).toHaveClass(/bg-gray-800/)
+    await expect(videosTab).toHaveClass(/007AFF/)
   })
 
   test('switches to Music tab and shows playlist section', async ({ page }) => {
@@ -39,7 +39,7 @@ test.describe('Media Page', () => {
   test('switches to Photos tab', async ({ page }) => {
     await page.locator('button', { hasText: 'Photos' }).click()
     const photosTab = page.locator('button', { hasText: 'Photos' })
-    await expect(photosTab).toHaveClass(/bg-gray-800/)
+    await expect(photosTab).toHaveClass(/007AFF/)
   })
 
   test('has a search filter input', async ({ page }) => {

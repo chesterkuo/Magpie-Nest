@@ -6,12 +6,11 @@ test.describe('App Shell & Navigation', () => {
     await expect(page).toHaveTitle('Magpie')
   })
 
-  test('respects system dark mode preference', async ({ page }) => {
-    // Emulate dark color scheme
-    await page.emulateMedia({ colorScheme: 'dark' })
+  test('renders in light theme by default', async ({ page }) => {
     await page.goto('/')
     const html = page.locator('html')
-    await expect(html).toHaveClass(/dark/)
+    // App uses macOS light theme; html element should not have a dark class
+    await expect(html).not.toHaveClass(/dark/)
   })
 
   test('renders sidebar navigation with 6 tabs', async ({ page }) => {
@@ -34,8 +33,7 @@ test.describe('App Shell & Navigation', () => {
   test('Chat tab is active by default on root', async ({ page }) => {
     await page.goto('/')
     const chatLink = page.locator('aside nav a', { hasText: 'Chat' })
-    await expect(chatLink).toHaveClass(/bg-gray-800/)
-    await expect(chatLink).toHaveClass(/text-white/)
+    await expect(chatLink).toHaveClass(/007AFF/)
   })
 
   test('navigates to each tab', async ({ page }) => {
