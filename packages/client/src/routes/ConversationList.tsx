@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router'
+import { useTranslation } from 'react-i18next'
 import { PlusIcon, ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/solid'
 import type { ConversationSummary } from '@magpie/shared'
 
@@ -21,6 +22,14 @@ function getDateGroup(updatedAt: string): DateGroup {
 
 const GROUP_ORDER: DateGroup[] = ['Today', 'Yesterday', 'Last 7 Days', 'Last 30 Days', 'Older']
 
+const groupI18nKeys: Record<DateGroup, string> = {
+  'Today': 'conversations.today',
+  'Yesterday': 'conversations.yesterday',
+  'Last 7 Days': 'conversations.last7Days',
+  'Last 30 Days': 'conversations.last30Days',
+  'Older': 'conversations.older',
+}
+
 function groupConversations(conversations: ConversationSummary[]) {
   const groups = new Map<DateGroup, ConversationSummary[]>()
   for (const g of GROUP_ORDER) groups.set(g, [])
@@ -36,6 +45,7 @@ function groupConversations(conversations: ConversationSummary[]) {
 export function ConversationList() {
   const [conversations, setConversations] = useState<ConversationSummary[]>([])
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const token = localStorage.getItem('magpie-token') || 'magpie-dev'
 
   const [selectionMode, setSelectionMode] = useState(false)
@@ -113,30 +123,30 @@ export function ConversationList() {
     <div className="p-4 space-y-2 relative">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-lg text-[#1D1D1F] font-semibold">Conversations</h1>
+        <h1 className="text-lg text-[#1D1D1F] font-semibold">{t('conversations.title')}</h1>
         <div className="flex items-center gap-3">
           {conversations.length > 0 && (
             <button
               onClick={selectionMode ? exitSelectionMode : () => setSelectionMode(true)}
               className="text-[#007AFF] text-sm font-medium"
             >
-              {selectionMode ? 'Done' : 'Select'}
+              {selectionMode ? t('conversations.done') : t('conversations.select')}
             </button>
           )}
           <button
             onClick={() => navigate('/')}
-            aria-label="New Chat"
+            aria-label={t('conversations.newChat')}
             className="flex items-center gap-1.5 bg-[#007AFF] text-white rounded-lg px-3 py-2 text-sm font-medium hover:bg-[#0056CC] transition-colors"
           >
             <PlusIcon className="w-4 h-4" />
-            New Chat
+            {t('conversations.newChat')}
           </button>
         </div>
       </div>
 
       {/* Empty state */}
       {conversations.length === 0 && (
-        <p className="text-[#6E6E73] text-sm">No conversations yet</p>
+        <p className="text-[#6E6E73] text-sm">{t('conversations.empty')}</p>
       )}
 
       {/* Grouped conversations */}
@@ -167,7 +177,7 @@ export function ConversationList() {
                 ) : (
                   <ChevronDownIcon className="w-4 h-4 text-[#86868B] transition-transform" />
                 )}
-                <span>{group.label}</span>
+                <span>{t(groupI18nKeys[group.label])}</span>
                 <span className="text-[#86868B] font-normal normal-case">
                   ({group.items.length})
                 </span>
@@ -200,10 +210,10 @@ export function ConversationList() {
                     )}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-[#6E6E73] truncate">
-                        {c.preview || 'Empty conversation'}
+                        {c.preview || t('conversations.emptyConversation')}
                       </p>
                       <div className="flex items-center gap-2 mt-1.5">
-                        <span className="text-xs text-[#86868B]">{c.messageCount} messages</span>
+                        <span className="text-xs text-[#86868B]">{t('conversations.messages', { count: c.messageCount })}</span>
                         <span className="text-xs text-[#86868B]">&middot;</span>
                         <span className="text-xs text-[#86868B]">
                           {new Date(c.updatedAt).toLocaleDateString()}
@@ -223,13 +233,13 @@ export function ConversationList() {
         <div className="sticky bottom-0 pt-3 pb-1">
           <div className="flex items-center justify-between bg-white rounded-xl shadow-md border border-[#E5E5EA] p-3">
             <span className="text-sm text-[#1D1D1F] font-medium">
-              {selected.size} selected
+              {t('conversations.selected', { count: selected.size })}
             </span>
             <button
               onClick={() => setShowConfirm(true)}
               className="bg-[#FF3B30] text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-[#D32F2F] transition-colors"
             >
-              Delete
+              {t('conversations.delete')}
             </button>
           </div>
         </div>
@@ -240,21 +250,21 @@ export function ConversationList() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-2xl shadow-xl p-6 mx-4 max-w-sm w-full">
             <h2 className="text-lg text-[#1D1D1F] font-semibold mb-1">
-              Delete {selected.size} conversation{selected.size > 1 ? 's' : ''}?
+              {t('conversations.deleteConfirm', { count: selected.size })}
             </h2>
-            <p className="text-sm text-[#6E6E73] mb-6">This cannot be undone.</p>
+            <p className="text-sm text-[#6E6E73] mb-6">{t('conversations.deleteWarning')}</p>
             <div className="flex items-center justify-end gap-3">
               <button
                 onClick={() => setShowConfirm(false)}
                 className="text-[#007AFF] text-sm font-medium px-4 py-2"
               >
-                Cancel
+                {t('conversations.cancel')}
               </button>
               <button
                 onClick={handleDelete}
                 className="bg-[#FF3B30] text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-[#D32F2F] transition-colors"
               >
-                Delete
+                {t('conversations.delete')}
               </button>
             </div>
           </div>
