@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { MagnifyingGlassIcon, QueueListIcon } from '@heroicons/react/24/outline'
 import type { FileItem, PlaylistSummary } from '@magpie/shared'
 import { RenderBlock } from '../components/renderers/RenderBlock'
@@ -10,6 +11,7 @@ const headers = () => ({ Authorization: `Bearer ${TOKEN()}`, 'Content-Type': 'ap
 type Tab = 'videos' | 'music' | 'photos'
 
 export function Media() {
+  const { t } = useTranslation()
   const [tab, setTab] = useState<Tab>('videos')
   const [files, setFiles] = useState<FileItem[]>([])
   const [playlists, setPlaylists] = useState<PlaylistSummary[]>([])
@@ -47,17 +49,17 @@ export function Media() {
     <div className="p-4 space-y-4">
       {/* Tab bar */}
       <div className="flex gap-1">
-        {(['videos', 'music', 'photos'] as Tab[]).map(t => (
+        {(['videos', 'music', 'photos'] as Tab[]).map(tabKey => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
+            key={tabKey}
+            onClick={() => setTab(tabKey)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              tab === t
+              tab === tabKey
                 ? 'bg-[#007AFF] text-white rounded-lg'
                 : 'text-[#6E6E73] hover:bg-black/5 rounded-lg'
             }`}
           >
-            {t.charAt(0).toUpperCase() + t.slice(1)}
+            {t(`media.${tabKey}`)}
           </button>
         ))}
       </div>
@@ -69,7 +71,7 @@ export function Media() {
           type="text"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          placeholder="Search..."
+          placeholder={t('media.search')}
           className="w-full bg-white border border-[#D2D2D7] rounded-lg pl-9 pr-3 py-2 text-sm text-[#1D1D1F] placeholder-[#86868B] focus:border-[#007AFF] focus:ring-2 focus:ring-[#007AFF]/20 focus:outline-none transition-colors"
         />
       </div>
@@ -78,9 +80,9 @@ export function Media() {
       {tab === 'music' && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-[#1D1D1F]">Playlists</h2>
+            <h2 className="text-sm font-semibold text-[#1D1D1F]">{t('media.playlists')}</h2>
             <button onClick={createPlaylist} className="text-xs text-[#007AFF] hover:text-[#0056CC] transition-colors">
-              + New Playlist
+              + {t('media.newPlaylist')}
             </button>
           </div>
           {playlists.map(p => (
@@ -114,7 +116,7 @@ export function Media() {
       ) : filtered.length > 0 ? (
         <RenderBlock items={filtered} />
       ) : (
-        <p className="text-sm text-[#6E6E73]">No {tab} found</p>
+        <p className="text-sm text-[#6E6E73]">{t(tab === 'videos' ? 'media.noVideos' : tab === 'music' ? 'media.noMusic' : 'media.noPhotos')}</p>
       )}
     </div>
   )

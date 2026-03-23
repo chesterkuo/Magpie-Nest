@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ArrowUpTrayIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline'
 
 interface UploadFile {
@@ -16,6 +17,7 @@ function formatSize(bytes: number): string {
 }
 
 export function Upload() {
+  const { t } = useTranslation()
   const [files, setFiles] = useState<UploadFile[]>([])
   const [dragOver, setDragOver] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -87,7 +89,7 @@ export function Upload() {
 
   return (
     <div className="flex flex-col h-full md:p-6 p-4">
-      <h1 className="text-lg text-[#1D1D1F] font-semibold mb-4">Upload Files</h1>
+      <h1 className="text-lg text-[#1D1D1F] font-semibold mb-4">{t('upload.title')}</h1>
 
       <div
         role="region"
@@ -104,8 +106,8 @@ export function Upload() {
       >
         <ArrowUpTrayIcon className="w-12 h-12 text-[#86868B]" />
         <div className="text-center">
-          <p className="text-sm text-[#6E6E73]">Drop files here or click to browse</p>
-          <p className="text-xs text-[#86868B] mt-1">Any file type, no size limit</p>
+          <p className="text-sm text-[#6E6E73]">{t('upload.dropzone')}</p>
+          <p className="text-xs text-[#86868B] mt-1">{t('upload.hint')}</p>
         </div>
         <input
           ref={inputRef}

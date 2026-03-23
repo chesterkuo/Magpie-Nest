@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { FileItem } from '@magpie/shared'
 import { RenderBlock } from '../components/renderers/RenderBlock'
 
@@ -10,13 +11,13 @@ function groupByDate(files: FileItem[]) {
   const yesterday = new Date(now.getTime() - 86400000).toDateString()
   const weekAgo = new Date(now.getTime() - 7 * 86400000)
 
-  const groups: Record<string, FileItem[]> = { Today: [], Yesterday: [], 'This Week': [], Earlier: [] }
+  const groups: Record<string, FileItem[]> = { today: [], yesterday: [], thisWeek: [], earlier: [] }
   for (const f of files) {
     const d = new Date(f.modified)
-    if (d.toDateString() === today) groups.Today.push(f)
-    else if (d.toDateString() === yesterday) groups.Yesterday.push(f)
-    else if (d > weekAgo) groups['This Week'].push(f)
-    else groups.Earlier.push(f)
+    if (d.toDateString() === today) groups.today.push(f)
+    else if (d.toDateString() === yesterday) groups.yesterday.push(f)
+    else if (d > weekAgo) groups.thisWeek.push(f)
+    else groups.earlier.push(f)
   }
   return Object.entries(groups).filter(([, items]) => items.length > 0)
 }
@@ -32,6 +33,7 @@ function SkeletonCards() {
 }
 
 export function Recent() {
+  const { t } = useTranslation()
   const [files, setFiles] = useState<FileItem[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -55,7 +57,7 @@ export function Recent() {
 
   return (
     <div className="p-4 space-y-6">
-      <h1 className="text-lg text-[#1D1D1F] font-semibold">Recent Files</h1>
+      <h1 className="text-lg text-[#1D1D1F] font-semibold">{t('recent.title')}</h1>
 
       {loading && files.length === 0 ? (
         <SkeletonCards />
@@ -63,12 +65,12 @@ export function Recent() {
         <>
           {groups.map(([label, items]) => (
             <div key={label} className="space-y-3">
-              <h2 className="text-xs font-medium text-[#6E6E73] uppercase tracking-wider">{label}</h2>
+              <h2 className="text-xs font-medium text-[#6E6E73] uppercase tracking-wider">{t(`recent.${label}`)}</h2>
               <RenderBlock items={items} />
             </div>
           ))}
           {!loading && files.length === 0 && (
-            <p className="text-[#6E6E73] text-sm">No recent files found</p>
+            <p className="text-[#6E6E73] text-sm">{t('recent.empty')}</p>
           )}
           {files.length < total && (
             <button
@@ -76,7 +78,7 @@ export function Recent() {
               disabled={loading}
               className="w-full py-2 text-sm text-[#007AFF] hover:text-[#0056CC] disabled:text-[#86868B] transition-colors"
             >
-              {loading ? 'Loading...' : 'Load more'}
+              {loading ? t('recent.loading') : t('recent.loadMore')}
             </button>
           )}
         </>
