@@ -25,7 +25,7 @@ function SkeletonCards() {
   return (
     <div className="space-y-3">
       {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="bg-gray-800 animate-pulse rounded-lg h-16" />
+        <div key={i} className="bg-[#E5E5EA] animate-pulse rounded-xl h-16" />
       ))}
     </div>
   )
@@ -55,7 +55,7 @@ export function Recent() {
 
   return (
     <div className="p-4 space-y-6">
-      <h1 className="text-lg font-semibold">Recent Files</h1>
+      <h1 className="text-lg text-[#1D1D1F] font-semibold">Recent Files</h1>
 
       {loading && files.length === 0 ? (
         <SkeletonCards />
@@ -63,18 +63,18 @@ export function Recent() {
         <>
           {groups.map(([label, items]) => (
             <div key={label} className="space-y-3">
-              <h2 className="text-xs font-medium text-gray-500 uppercase tracking-wider">{label}</h2>
+              <h2 className="text-xs font-medium text-[#6E6E73] uppercase tracking-wider">{label}</h2>
               <RenderBlock items={items} />
             </div>
           ))}
           {!loading && files.length === 0 && (
-            <p className="text-gray-500 text-sm">No recent files found</p>
+            <p className="text-[#6E6E73] text-sm">No recent files found</p>
           )}
           {files.length < total && (
             <button
               onClick={() => { const next = offset + limit; setOffset(next); loadFiles(next) }}
               disabled={loading}
-              className="w-full py-2 text-sm text-gray-400 hover:text-white transition-colors"
+              className="w-full py-2 text-sm text-[#007AFF] hover:text-[#0056CC] disabled:text-[#86868B] transition-colors"
             >
               {loading ? 'Loading...' : 'Load more'}
             </button>
