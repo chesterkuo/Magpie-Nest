@@ -1,8 +1,18 @@
 import { Hono } from 'hono'
 import type { MagpieDb } from '../services/db'
 import { existsSync } from 'fs'
+import { exec } from 'child_process'
+import { promisify } from 'util'
 import mammoth from 'mammoth'
 import * as XLSX from 'xlsx'
+
+const execAsync = promisify(exec)
+const HEIC_EXTENSIONS = new Set(['.heic', '.heif'])
+
+function isHeic(filePath: string): boolean {
+  const ext = '.' + filePath.split('.').pop()?.toLowerCase()
+  return HEIC_EXTENSIONS.has(ext)
+}
 
 export function createFileRoute(db: MagpieDb) {
   const route = new Hono()
@@ -12,6 +22,23 @@ export function createFileRoute(db: MagpieDb) {
     const record = db.getFileById(id)
     if (!record) return c.json({ error: 'File not found' }, 404)
     if (!existsSync(record.path)) return c.json({ error: 'File missing from disk' }, 404)
+
+    // Convert HEIC to JPEG for browser compatibility
+    if (isHeic(record.path)) {
+      const dataDir = process.env.DATA_DIR || './data'
+      const jpegPath = `${dataDir}/thumbs/${id}.converted.jpg`
+      if (!existsSync(jpegPath)) {
+        await execAsync(`sips -s format jpeg "${record.path}" --out "${jpegPath}"`)
+      }
+      const jpegFile = Bun.file(jpegPath)
+      return new Response(jpegFile, {
+        headers: {
+          'Content-Type': 'image/jpeg',
+          'Content-Length': String(jpegFile.size),
+          'Cache-Control': 'max-age=86400',
+        },
+      })
+    }
 
     const file = Bun.file(record.path)
     const fileSize = file.size

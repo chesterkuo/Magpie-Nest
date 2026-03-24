@@ -6,9 +6,16 @@ import { dirname } from 'path'
 
 const execAsync = promisify(exec)
 
+const HEIC_EXTENSIONS = new Set(['.heic', '.heif'])
+
 function ensureDir(filePath: string) {
   const dir = dirname(filePath)
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
+}
+
+function isHeic(filePath: string): boolean {
+  const ext = '.' + filePath.split('.').pop()?.toLowerCase()
+  return HEIC_EXTENSIONS.has(ext)
 }
 
 export async function generateImageThumb(
@@ -17,7 +24,15 @@ export async function generateImageThumb(
   width = 320
 ): Promise<void> {
   ensureDir(outputPath)
-  await sharp(inputPath).resize(width).webp({ quality: 80 }).toFile(outputPath)
+  if (isHeic(inputPath)) {
+    // sharp lacks HEIC support — use macOS sips to convert to JPEG first, then sharp to webp
+    const tmpJpg = outputPath.replace(/\.webp$/, '.tmp.jpg')
+    await execAsync(`sips -s format jpeg -Z ${width} "${inputPath}" --out "${tmpJpg}"`)
+    await sharp(tmpJpg).webp({ quality: 80 }).toFile(outputPath)
+    try { (await import('fs')).unlinkSync(tmpJpg) } catch {}
+  } else {
+    await sharp(inputPath).resize(width).webp({ quality: 80 }).toFile(outputPath)
+  }
 }
 
 export async function generateVideoThumb(
