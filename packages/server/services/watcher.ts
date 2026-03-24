@@ -12,7 +12,7 @@ export function createWatcher(
   const watcher = chokidar.watch(directories, {
     ignored: /(^|[\/\\])\.|node_modules|\.DS_Store/,
     persistent: true,
-    ignoreInitial: true,
+    ignoreInitial: false, // Scan existing files on startup to catch AirDrop/offline additions
     awaitWriteFinish: {
       stabilityThreshold: 500,
       pollInterval: 100,
