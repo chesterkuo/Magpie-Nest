@@ -2,7 +2,7 @@
 
 > Your personal AI storage assistant — manage, search, play, and organize files with natural language. Runs 100% locally on your device.
 
-[繁體中文](./README.zh-TW.md)
+[English](./README.md) | [繁體中文](./README.zh-TW.md) | [简体中文](./README.zh-CN.md) | [Français](./README.fr.md) | [Español](./README.es.md) | [日本語](./README.ja.md) | [한국어](./README.ko.md) | [ไทย](./README.th.md) | [Nederlands](./README.nl.md) | [Bahasa Indonesia](./README.id.md)
 
 ## What is Magpie?
 
